@@ -1,8 +1,13 @@
 'use client';
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import type { Chain } from 'viem';
-import { useState } from 'react';
+import type {
+	AddEthereumChainParameter,
+	Chain,
+	EIP1193RequestFn,
+	WalletRpcSchema,
+} from 'viem';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { SiweMessage } from 'siwe';
 import {
 	useAccount,
@@ -24,9 +29,7 @@ function toHexChainId(chainId: number) {
 }
 
 async function addChainToWallet(
-	request:
-		| ((args: { method: string; params?: unknown[] }) => Promise<unknown>)
-		| undefined,
+	request: EIP1193RequestFn<WalletRpcSchema> | undefined,
 	chain: Chain,
 ) {
 	if (!request) {
@@ -35,19 +38,19 @@ async function addChainToWallet(
 		);
 	}
 
+	const chainToAdd: AddEthereumChainParameter = {
+		chainId: toHexChainId(chain.id),
+		chainName: chain.name,
+		nativeCurrency: chain.nativeCurrency,
+		rpcUrls: chain.rpcUrls.default.http,
+		blockExplorerUrls: chain.blockExplorers?.default?.url
+			? [chain.blockExplorers.default.url]
+			: undefined,
+	};
+
 	await request({
 		method: 'wallet_addEthereumChain',
-		params: [
-			{
-				chainId: toHexChainId(chain.id),
-				chainName: chain.name,
-				nativeCurrency: chain.nativeCurrency,
-				rpcUrls: chain.rpcUrls.default.http,
-				blockExplorerUrls: chain.blockExplorers?.default?.url
-					? [chain.blockExplorers.default.url]
-					: undefined,
-			},
-		],
+		params: [chainToAdd],
 	});
 }
 
@@ -61,10 +64,12 @@ export default function WalletAuthButton() {
 	const session = authClient.useSession();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [shouldAutoSignIn, setShouldAutoSignIn] = useState(false);
 
 	const isAuthenticated = Boolean(
 		session.data?.session && session.data?.user,
 	);
+	const isOnRequiredChain = chainId === requiredChain.id;
 
 	async function ensureRequiredChain() {
 		if (chainId === requiredChain.id) {
@@ -75,15 +80,16 @@ export default function WalletAuthButton() {
 			await switchChainAsync({ chainId: requiredChain.id });
 			return;
 		} catch {
-			await addChainToWallet(
-				walletClient?.request.bind(walletClient),
-				requiredChain,
-			);
+			await addChainToWallet(walletClient?.request, requiredChain);
 			await switchChainAsync({ chainId: requiredChain.id });
 		}
 	}
 
 	async function handleSignIn() {
+		if (isSubmitting) {
+			return;
+		}
+
 		if (!address || !isConnected) {
 			setError('Connect a wallet before signing in.');
 			return;
@@ -157,48 +163,132 @@ export default function WalletAuthButton() {
 		}
 	}
 
+	const runAutoSignIn = useEffectEvent(async () => {
+		if (
+			!shouldAutoSignIn ||
+			!isConnected ||
+			!address ||
+			isAuthenticated ||
+			isSubmitting
+		) {
+			return;
+		}
+
+		setShouldAutoSignIn(false);
+		await handleSignIn();
+	});
+
+	useEffect(() => {
+		if (shouldAutoSignIn && isConnected && !isAuthenticated) {
+			void runAutoSignIn();
+		}
+	}, [isAuthenticated, isConnected, shouldAutoSignIn]);
+
+	function getPrimaryLabel(isConnectedToWallet: boolean) {
+		if (!isConnectedToWallet) {
+			return 'Connect wallet';
+		}
+
+		if (isSubmitting) {
+			return 'Signing in...';
+		}
+
+		if (!isAuthenticated) {
+			return 'Retry sign-in';
+		}
+
+		return address ? formatAddress(address) : 'Wallet';
+	}
+
 	async function handleSignOut() {
 		setError(null);
+		setShouldAutoSignIn(false);
 		await authClient.signOut();
 		disconnect();
 		session.refetch();
 	}
 
 	return (
-		<div className="flex flex-col items-end gap-2">
-			<div className="flex items-center gap-3">
-				<ConnectButton />
-				{isConnected && !isAuthenticated ? (
-					<button
-						type="button"
-						onClick={handleSignIn}
-						disabled={isSubmitting}
-						className="rounded-full border border-black/10 bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+		<ConnectButton.Custom>
+			{({ account, mounted, openAccountModal, openConnectModal }) => {
+				const ready = mounted;
+				const connected = ready && Boolean(account) && isConnected;
+
+				async function handlePrimaryAction() {
+					setError(null);
+
+					if (!connected) {
+						setShouldAutoSignIn(true);
+						openConnectModal();
+						return;
+					}
+
+					if (isAuthenticated) {
+						openAccountModal();
+						return;
+					}
+
+					await handleSignIn();
+				}
+
+				return (
+					<div
+						className="flex flex-col items-end gap-2"
+						aria-hidden={!ready}
+						style={
+							!ready
+								? {
+										opacity: 0,
+										pointerEvents: 'none',
+										userSelect: 'none',
+									}
+								: undefined
+						}
 					>
-						{isSubmitting ? 'Signing in...' : 'Sign in'}
-					</button>
-				) : null}
-				{isAuthenticated && address ? (
-					<button
-						type="button"
-						onClick={handleSignOut}
-						className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-black/5 dark:border-white/10 dark:text-zinc-100 dark:hover:bg-white/10"
-					>
-						Sign out {formatAddress(address)}
-					</button>
-				) : null}
-			</div>
-			{isConnected && chainId !== requiredChain.id ? (
-				<p className="max-w-xs text-right text-xs text-amber-600 dark:text-amber-400">
-					Switch to {requiredChain.name} to sign in. The app will try
-					to add it to your wallet automatically if it is missing.
-				</p>
-			) : null}
-			{error ? (
-				<p className="max-w-xs text-right text-xs text-red-600 dark:text-red-400">
-					{error}
-				</p>
-			) : null}
-		</div>
+						<div className="flex items-center gap-3">
+							<button
+								type="button"
+								onClick={() => {
+									void handlePrimaryAction();
+								}}
+								disabled={!ready || isSubmitting}
+								className="rounded-full border border-black/10 bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+							>
+								{getPrimaryLabel(connected)}
+							</button>
+							{isAuthenticated && address ? (
+								<button
+									type="button"
+									onClick={() => {
+										void handleSignOut();
+									}}
+									className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-black/5 dark:border-white/10 dark:text-zinc-100 dark:hover:bg-white/10"
+								>
+									Sign out
+								</button>
+							) : null}
+						</div>
+						{connected && !isAuthenticated ? (
+							<p className="max-w-xs text-right text-xs text-zinc-500 dark:text-zinc-400">
+								Approve the wallet prompts to switch to{' '}
+								{requiredChain.name}
+								and sign in.
+							</p>
+						) : null}
+						{connected && !isAuthenticated && !isOnRequiredChain ? (
+							<p className="max-w-xs text-right text-xs text-amber-600 dark:text-amber-400">
+								The app will try to add {requiredChain.name}{' '}
+								automatically if it is missing.
+							</p>
+						) : null}
+						{error ? (
+							<p className="max-w-xs text-right text-xs text-red-600 dark:text-red-400">
+								{error}
+							</p>
+						) : null}
+					</div>
+				);
+			}}
+		</ConnectButton.Custom>
 	);
 }
