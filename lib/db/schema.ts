@@ -119,6 +119,9 @@ export const file = pgTable(
 		storageHash: text('storage_hash').notNull(),
 		filename: text('filename').notNull(),
 		mimeType: text('mime_type'),
+		sizeBytes: text('size_bytes').notNull().default('0'),
+		quotedFee: text('quoted_fee').notNull().default('0'),
+		chargedFee: text('charged_fee').notNull().default('0'),
 		status: text('status').notNull().default('uploaded'),
 		createdAt: timestamp('created_at', { withTimezone: true })
 			.notNull()
@@ -133,6 +136,93 @@ export const file = pgTable(
 			table.ownerId,
 			table.storageHash,
 		),
+	],
+);
+
+export const creditBalance = pgTable(
+	'credit_balance',
+	{
+		id: text('id').primaryKey().$defaultFn(createId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		availableAmount: text('available_amount').notNull().default('0'),
+		lockedAmount: text('locked_amount').notNull().default('0'),
+		totalCredited: text('total_credited').notNull().default('0'),
+		totalDebited: text('total_debited').notNull().default('0'),
+		createdAt: timestamp('created_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		uniqueIndex('credit_balance_user_unique').on(table.userId),
+		index('credit_balance_user_id_idx').on(table.userId),
+	],
+);
+
+export const creditTransaction = pgTable(
+	'credit_transaction',
+	{
+		id: text('id').primaryKey().$defaultFn(createId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		balanceId: text('balance_id')
+			.notNull()
+			.references(() => creditBalance.id, { onDelete: 'cascade' }),
+		type: text('type').notNull(),
+		status: text('status').notNull().default('confirmed'),
+		amount: text('amount').notNull(),
+		balanceBefore: text('balance_before').notNull(),
+		balanceAfter: text('balance_after').notNull(),
+		referenceType: text('reference_type'),
+		referenceId: text('reference_id'),
+		transactionKey: text('transaction_key'),
+		txHash: text('tx_hash'),
+		description: text('description'),
+		createdAt: timestamp('created_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index('credit_transaction_user_id_idx').on(table.userId),
+		index('credit_transaction_balance_id_idx').on(table.balanceId),
+		index('credit_transaction_type_idx').on(table.type),
+		uniqueIndex('credit_transaction_key_unique').on(table.transactionKey),
+		uniqueIndex('credit_transaction_tx_hash_unique').on(table.txHash),
+	],
+);
+
+export const topup = pgTable(
+	'topup',
+	{
+		id: text('id').primaryKey().$defaultFn(createId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		walletAddress: text('wallet_address').notNull(),
+		chainId: text('chain_id').notNull(),
+		amount: text('amount').notNull(),
+		txHash: text('tx_hash').notNull(),
+		status: text('status').notNull().default('pending'),
+		blockNumber: text('block_number'),
+		creditedAt: timestamp('credited_at', { withTimezone: true }),
+		confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index('topup_user_id_idx').on(table.userId),
+		index('topup_wallet_address_idx').on(table.walletAddress),
+		index('topup_status_idx').on(table.status),
+		uniqueIndex('topup_tx_hash_unique').on(table.txHash),
 	],
 );
 
