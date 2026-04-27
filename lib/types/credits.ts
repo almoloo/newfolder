@@ -48,6 +48,9 @@ export interface CreditBalanceSnapshot {
 	totalDebited: CreditAmount;
 }
 
+/** Response body for GET /api/balance/summary */
+export type BalanceSummaryResponse = CreditBalanceSnapshot;
+
 export interface CreditLedgerEntry {
 	type: CreditTransactionType;
 	status: CreditTransactionStatus;
@@ -59,6 +62,26 @@ export interface CreditLedgerEntry {
 	transactionKey?: string | null;
 	txHash?: string | null;
 	description?: string | null;
+}
+
+export interface CreditTransactionHistoryItem extends CreditLedgerEntry {
+	id: string;
+	createdAt: Date;
+}
+
+export interface PaginationMeta {
+	page: number;
+	limit: number;
+	total: number;
+	totalPages: number;
+	hasPreviousPage: boolean;
+	hasNextPage: boolean;
+}
+
+/** Response body for GET /api/balance/transactions */
+export interface BalanceTransactionsResponse {
+	items: CreditTransactionHistoryItem[];
+	pagination: PaginationMeta;
 }
 
 export interface TopupRecordInput {
