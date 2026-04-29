@@ -1,4 +1,5 @@
 import SummaryData from './components/summary-data';
+import Topup from './components/topup';
 import TransactionsData from './components/transactions';
 
 export default function PlaygroundPage() {
@@ -7,6 +8,7 @@ export default function PlaygroundPage() {
 			<h1>TESTING</h1>
 			<SummaryData />
 			<TransactionsData />
+			<Topup />
 		</div>
 	);
 }

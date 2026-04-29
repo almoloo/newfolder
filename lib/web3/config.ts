@@ -1,12 +1,19 @@
+'use client';
+
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { zeroGGalileoTestnet, zeroGMainnet } from 'wagmi/chains';
+
+export {
+	zeroGGalileoTestnet,
+	zeroGMainnet,
+	supportedChains,
+	requiredChain,
+	contractAddress,
+} from './chains';
 
 const walletConnectProjectId =
 	process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? 'demo';
-const isTestnet = process.env.NEXT_PUBLIC_IS_TESTNET === 'true';
 
-export const supportedChains = [zeroGGalileoTestnet, zeroGMainnet] as const;
-export const requiredChain = isTestnet ? zeroGGalileoTestnet : zeroGMainnet;
+import { supportedChains } from './chains';
 
 export const wagmiConfig = getDefaultConfig({
 	appName: 'NewFolder',

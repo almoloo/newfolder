@@ -25,6 +25,77 @@ export const auth = betterAuth({
 		schema,
 		camelCase: true,
 	}),
+	databaseHooks: {
+		user: {
+			create: {
+				before: async (user) => {
+					if (user.walletAddress) {
+						return {
+							data: {
+								...user,
+								walletAddress: (
+									user.walletAddress as string
+								).toLowerCase(),
+							},
+						};
+					}
+				},
+				after: async (user) => {
+					// Grant every new user 1 0G (1e18 wei) as initial credit
+					const initialGrant = '1000000000000000000';
+					const [balance] = await db
+						.insert(schema.creditBalance)
+						.values({
+							userId: user.id,
+							availableAmount: initialGrant,
+							totalCredited: initialGrant,
+						})
+						.returning({ id: schema.creditBalance.id });
+					await db.insert(schema.creditTransaction).values({
+						userId: user.id,
+						balanceId: balance.id,
+						type: 'adjustment',
+						status: 'confirmed',
+						amount: initialGrant,
+						balanceBefore: '0',
+						balanceAfter: initialGrant,
+						referenceType: 'adjustment',
+						transactionKey: `initial_grant:${user.id}`,
+						description:
+							'Initial 1 0G credit grant on registration',
+					});
+				},
+			},
+			update: {
+				before: async (user) => {
+					if (user.walletAddress) {
+						return {
+							data: {
+								...user,
+								walletAddress: (
+									user.walletAddress as string
+								).toLowerCase(),
+							},
+						};
+					}
+				},
+			},
+		},
+		account: {
+			create: {
+				before: async (account) => {
+					if (account.providerId === 'siwe') {
+						return {
+							data: {
+								...account,
+								accountId: account.accountId.toLowerCase(),
+							},
+						};
+					}
+				},
+			},
+		},
+	},
 	plugins: [
 		siwe({
 			domain: siweDomain,

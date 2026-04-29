@@ -1,6 +1,25 @@
 [profile.default]
+evm_version = "cancun"
 src = "src"
 out = "out"
 libs = ["lib"]
+
+[profile.galileo]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+[profile.mainnet]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+[rpc_endpoints]
+galileo = "${ZEROG_GALILEO_RPC_URL}"
+mainnet = "${ZEROG_MAINNET_RPC_URL}"
+
+[etherscan]
+galileo = { key = "${ZEROG_GALILEO_EXPLORER_API_KEY}", url = "${ZEROG_GALILEO_EXPLORER_URL}/api" }
+mainnet = { key = "${ZEROG_MAINNET_EXPLORER_API_KEY}", url = "${ZEROG_MAINNET_EXPLORER_URL}/api" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

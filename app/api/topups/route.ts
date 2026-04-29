@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import {
@@ -6,7 +6,7 @@ import {
 	type TopupRecordInput,
 	type TopupStatus,
 } from '@/lib/types/credits';
-import { requiredChain } from '@/lib/web3/config';
+import { requiredChain } from '@/lib/web3/chains';
 
 // Creates or registers a credit purchase attempt. Use this for the “buy credits” flow, not for generic wallet funding.
 
@@ -24,7 +24,7 @@ function parseBody(body: unknown): TopupRecordInput {
 	const candidate = body as Record<string, unknown>;
 	const walletAddress =
 		typeof candidate.walletAddress === 'string'
-			? candidate.walletAddress.trim()
+			? candidate.walletAddress.trim().toLowerCase()
 			: '';
 	const chainIdValue = candidate.chainId;
 	const amount =
@@ -104,28 +104,20 @@ export async function POST(request: Request) {
 		}
 
 		const payload = parseBody(await request.json());
-		const user = await db.query.user.findFirst({
-			where: eq(schema.user.id, session.user.id),
-			columns: {
-				walletAddress: true,
-			},
+
+		// Better Auth SIWE stores wallet addresses in the walletAddress model using
+		// EIP-55 checksum format — compare case-insensitively via lower().
+		const linkedWallet = await db.query.walletAddress.findFirst({
+			where: and(
+				eq(schema.walletAddress.userId, session.user.id),
+				sql`lower(${schema.walletAddress.address}) = ${payload.walletAddress}`,
+			),
+			columns: { address: true },
 		});
 
-		if (!user?.walletAddress) {
+		if (!linkedWallet) {
 			return Response.json(
 				{ error: 'Authenticated user does not have a linked wallet' },
-				{ status: 403 },
-			);
-		}
-
-		if (
-			user.walletAddress.toLowerCase() !==
-			payload.walletAddress.toLowerCase()
-		) {
-			return Response.json(
-				{
-					error: 'walletAddress does not match the authenticated user',
-				},
 				{ status: 403 },
 			);
 		}
@@ -137,38 +129,101 @@ export async function POST(request: Request) {
 			);
 		}
 
-		const status = payload.status ?? 'pending';
 		const now = new Date();
+		const userId = session.user.id;
 
-		const [createdTopup] = await db
-			.insert(schema.topup)
-			.values({
-				userId: session.user.id,
-				walletAddress: payload.walletAddress,
-				chainId: payload.chainId,
-				amount: payload.amount,
-				txHash: payload.txHash,
-				status,
-				blockNumber: payload.blockNumber ?? null,
-				confirmedAt:
-					status === 'confirmed' || status === 'credited'
-						? now
-						: null,
-				creditedAt: status === 'credited' ? now : null,
-			})
-			.returning({
-				id: schema.topup.id,
-				walletAddress: schema.topup.walletAddress,
-				chainId: schema.topup.chainId,
-				amount: schema.topup.amount,
-				txHash: schema.topup.txHash,
-				status: schema.topup.status,
-				blockNumber: schema.topup.blockNumber,
-				confirmedAt: schema.topup.confirmedAt,
-				creditedAt: schema.topup.creditedAt,
-				createdAt: schema.topup.createdAt,
-				updatedAt: schema.topup.updatedAt,
+		const createdTopup = await db.transaction(async (tx) => {
+			// 1. Insert topup as immediately credited
+			const [topup] = await tx
+				.insert(schema.topup)
+				.values({
+					userId,
+					walletAddress: payload.walletAddress,
+					chainId: payload.chainId,
+					amount: payload.amount,
+					txHash: payload.txHash,
+					status: 'credited',
+					blockNumber: payload.blockNumber ?? null,
+					confirmedAt: now,
+					creditedAt: now,
+				})
+				.returning({
+					id: schema.topup.id,
+					walletAddress: schema.topup.walletAddress,
+					chainId: schema.topup.chainId,
+					amount: schema.topup.amount,
+					txHash: schema.topup.txHash,
+					status: schema.topup.status,
+					blockNumber: schema.topup.blockNumber,
+					confirmedAt: schema.topup.confirmedAt,
+					creditedAt: schema.topup.creditedAt,
+					createdAt: schema.topup.createdAt,
+					updatedAt: schema.topup.updatedAt,
+				});
+
+			// 2. Upsert credit_balance — create on first topup, increment on subsequent
+			const existing = await tx.query.creditBalance.findFirst({
+				where: eq(schema.creditBalance.userId, userId),
+				columns: {
+					id: true,
+					availableAmount: true,
+					totalCredited: true,
+				},
 			});
+
+			let balanceId: string;
+			let balanceBefore: string;
+			let balanceAfter: string;
+
+			if (existing) {
+				balanceBefore = existing.availableAmount;
+				balanceAfter = String(
+					BigInt(existing.availableAmount) + BigInt(payload.amount),
+				);
+				await tx
+					.update(schema.creditBalance)
+					.set({
+						availableAmount: balanceAfter,
+						totalCredited: String(
+							BigInt(existing.totalCredited) +
+								BigInt(payload.amount),
+						),
+						updatedAt: now,
+					})
+					.where(eq(schema.creditBalance.id, existing.id));
+				balanceId = existing.id;
+			} else {
+				balanceBefore = '0';
+				balanceAfter = payload.amount;
+				const [created] = await tx
+					.insert(schema.creditBalance)
+					.values({
+						userId,
+						availableAmount: payload.amount,
+						totalCredited: payload.amount,
+					})
+					.returning({ id: schema.creditBalance.id });
+				balanceId = created.id;
+			}
+
+			// 3. Insert credit_transaction ledger entry
+			await tx.insert(schema.creditTransaction).values({
+				userId,
+				balanceId,
+				type: 'topup_credit',
+				status: 'confirmed',
+				amount: payload.amount,
+				balanceBefore,
+				balanceAfter,
+				referenceType: 'topup',
+				referenceId: topup.id,
+				transactionKey: `topup:${topup.id}`,
+				txHash: payload.txHash,
+				description: `Topup credited from tx ${payload.txHash}`,
+			});
+
+			return topup;
+		});
 
 		return Response.json(createdTopup, { status: 201 });
 	} catch (error) {

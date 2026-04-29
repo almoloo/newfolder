@@ -9,7 +9,10 @@
 		"lint": "eslint",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"contract:test": "forge test --root contracts/new_folder",
+		"contract:deploy:galileo": "forge script contracts/new_folder/script/Deploy.s.sol --rpc-url galileo --root contracts/new_folder --broadcast --legacy",
+		"contract:deploy:mainnet": "forge script contracts/new_folder/script/Deploy.s.sol --rpc-url mainnet --root contracts/new_folder --broadcast --verify"
 	},
 	"dependencies": {
 		"@0gfoundation/0g-ts-sdk": "^1.2.1",
