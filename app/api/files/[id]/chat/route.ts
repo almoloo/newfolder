@@ -9,6 +9,7 @@ import { db, schema } from '@/lib/db';
 import { createIndexer, decodeStorageHash } from '@/lib/storage/client';
 import {
 	createBroker,
+	checkAndRefillComputeLedger,
 	ZG_COMPUTE_PROVIDER_ADDRESS,
 	ZG_COMPUTE_VISION_PROVIDER_ADDRESS,
 } from '@/lib/ai/client';
@@ -389,6 +390,9 @@ export async function POST(
 				...userMessages,
 			];
 		}
+
+		// Check ledger balance and refill if needed (non-blocking)
+		checkAndRefillComputeLedger();
 
 		// Get 0G compute provider endpoint + auth headers
 		const broker = await createBroker();
