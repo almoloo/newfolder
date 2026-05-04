@@ -41,8 +41,8 @@ export const auth = betterAuth({
 					}
 				},
 				after: async (user) => {
-					// Grant every new user 1 0G (1e18 wei) as initial credit
-					const initialGrant = '1000000000000000000';
+					// Grant every new user 100 stars (100 × 10^12 neuron) as initial credit
+					const initialGrant = '100000000000000';
 					const [balance] = await db
 						.insert(schema.creditBalance)
 						.values({
@@ -62,7 +62,7 @@ export const auth = betterAuth({
 						referenceType: 'adjustment',
 						transactionKey: `initial_grant:${user.id}`,
 						description:
-							'Initial 1 0G credit grant on registration',
+							'Initial ★ 100 credit grant on registration',
 					});
 				},
 			},

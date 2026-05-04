@@ -226,6 +226,27 @@ export const topup = pgTable(
 	],
 );
 
+export const chatMessage = pgTable(
+	'chat_message',
+	{
+		id: text('id').primaryKey().$defaultFn(createId),
+		fileId: text('file_id')
+			.notNull()
+			.references(() => file.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		role: text('role').notNull(), // 'user' | 'assistant'
+		content: text('content').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index('chat_message_file_user_idx').on(table.fileId, table.userId),
+	],
+);
+
 export const walletAddress = pgTable(
 	'wallet_address',
 	{

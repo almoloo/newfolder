@@ -35,6 +35,7 @@ export const creditReferenceTypes = [
 	'refund',
 	'adjustment',
 	'withdrawal',
+	'chat',
 ] as const;
 
 export type CreditReferenceType = (typeof creditReferenceTypes)[number];

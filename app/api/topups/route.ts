@@ -1,4 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
+import { createPublicClient, http, parseAbi } from 'viem';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import {
@@ -6,7 +7,65 @@ import {
 	type TopupRecordInput,
 	type TopupStatus,
 } from '@/lib/types/credits';
-import { requiredChain } from '@/lib/web3/chains';
+import { requiredChain, contractAddress } from '@/lib/web3/chains';
+import { depositFundToComputeLedger } from '@/lib/ai/client';
+
+const VAULT_ABI = parseAbi([
+	'event BalanceToppedUp(address indexed account, uint256 amount, uint256 newAccountTotal)',
+]);
+
+/**
+ * Verify a topup transaction on-chain.
+ * Throws a descriptive error string if verification fails.
+ */
+async function verifyTopupTx(
+	txHash: `0x${string}`,
+	fromAddress: string,
+	claimedAmount: string,
+): Promise<void> {
+	if (!contractAddress) {
+		throw new Error('Contract address not configured on server');
+	}
+
+	const client = createPublicClient({
+		chain: requiredChain,
+		transport: http(requiredChain.rpcUrls.default.http[0]),
+	});
+
+	const receipt = await client.getTransactionReceipt({ hash: txHash });
+
+	if (!receipt) {
+		throw new Error('Transaction not found on-chain');
+	}
+
+	if (receipt.status !== 'success') {
+		throw new Error('Transaction reverted on-chain');
+	}
+
+	if (receipt.to?.toLowerCase() !== contractAddress.toLowerCase()) {
+		throw new Error('Transaction target is not the CreditVault contract');
+	}
+
+	// Use viem's parseEventLogs to decode BalanceToppedUp events from the receipt
+	const { parseEventLogs } = await import('viem');
+	const events = parseEventLogs({
+		abi: VAULT_ABI,
+		logs: receipt.logs,
+	});
+
+	const matchingEvent = events.find(
+		(e) =>
+			e.eventName === 'BalanceToppedUp' &&
+			e.args.account.toLowerCase() === fromAddress.toLowerCase() &&
+			e.args.amount === BigInt(claimedAmount),
+	);
+
+	if (!matchingEvent) {
+		throw new Error(
+			'No matching BalanceToppedUp event found for this wallet and amount',
+		);
+	}
+}
 
 // Creates or registers a credit purchase attempt. Use this for the “buy credits” flow, not for generic wallet funding.
 
@@ -129,6 +188,22 @@ export async function POST(request: Request) {
 			);
 		}
 
+		// Verify the transaction on-chain before crediting anything
+		try {
+			await verifyTopupTx(
+				payload.txHash as `0x${string}`,
+				payload.walletAddress,
+				payload.amount,
+			);
+		} catch (err) {
+			return Response.json(
+				{
+					error: `On-chain verification failed: ${err instanceof Error ? err.message : String(err)}`,
+				},
+				{ status: 422 },
+			);
+		}
+
 		const now = new Date();
 		const userId = session.user.id;
 
@@ -223,6 +298,13 @@ export async function POST(request: Request) {
 			});
 
 			return topup;
+		});
+
+		// Forward the topped-up A0GI into the 0G Compute Ledger so providers can be paid.
+		// Fire-and-forget: don't fail the topup response if this step errors — it can
+		// be retried manually or via a background job.
+		depositFundToComputeLedger(createdTopup.amount).catch((err) => {
+			console.error('[topup] depositFundToComputeLedger failed:', err);
 		});
 
 		return Response.json(createdTopup, { status: 201 });

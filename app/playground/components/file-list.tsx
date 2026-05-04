@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
+import FileChat from './file-chat';
 
 interface FileItem {
 	id: string;
@@ -37,6 +38,7 @@ export default function FileList({ refreshKey }: Props) {
 	const [page, setPage] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [chatOpenId, setChatOpenId] = useState<string | null>(null);
 
 	// Re-fetch when parent signals a refresh (e.g. after a successful upload)
 	useEffect(() => {
@@ -125,45 +127,76 @@ export default function FileList({ refreshKey }: Props) {
 							</thead>
 							<tbody>
 								{data.items.map((f) => (
-									<tr
-										key={f.id}
-										className="border-b"
-									>
-										<td className="p-1 font-mono">
-											{f.filename}
-										</td>
-										<td className="p-1">
-											{Number(
-												f.sizeBytes,
-											).toLocaleString()}{' '}
-											B
-										</td>
-										<td className="p-1">{f.status}</td>
-										<td className="p-1 flex gap-2">
-											<button
-												className="bg-green-600 px-2 py-1 text-white"
-												onClick={() =>
-													handleDownload(
-														f.id,
-														f.filename,
-													)
-												}
-											>
-												Download
-											</button>
-											<button
-												className="bg-red-600 px-2 py-1 text-white disabled:bg-gray-500"
-												onClick={() =>
-													handleDelete(f.id)
-												}
-												disabled={deletingId === f.id}
-											>
-												{deletingId === f.id
-													? '…'
-													: 'Delete'}
-											</button>
-										</td>
-									</tr>
+									<>
+										<tr
+											key={f.id}
+											className="border-b"
+										>
+											<td className="p-1 font-mono">
+												{f.filename}
+											</td>
+											<td className="p-1">
+												{Number(
+													f.sizeBytes,
+												).toLocaleString()}{' '}
+												B
+											</td>
+											<td className="p-1">{f.status}</td>
+											<td className="p-1 flex gap-2">
+												<button
+													className="bg-green-600 px-2 py-1 text-white"
+													onClick={() =>
+														handleDownload(
+															f.id,
+															f.filename,
+														)
+													}
+												>
+													Download
+												</button>
+												<button
+													className="bg-purple-600 px-2 py-1 text-white"
+													onClick={() =>
+														setChatOpenId(
+															chatOpenId === f.id
+																? null
+																: f.id,
+														)
+													}
+												>
+													{chatOpenId === f.id
+														? 'Close Chat'
+														: 'Chat'}
+												</button>
+												<button
+													className="bg-red-600 px-2 py-1 text-white disabled:bg-gray-500"
+													onClick={() =>
+														handleDelete(f.id)
+													}
+													disabled={
+														deletingId === f.id
+													}
+												>
+													{deletingId === f.id
+														? '…'
+														: 'Delete'}
+												</button>
+											</td>
+										</tr>
+										{chatOpenId === f.id && (
+											<tr key={`${f.id}-chat`}>
+												<td
+													colSpan={4}
+													className="p-2"
+												>
+													<FileChat
+														fileId={f.id}
+														filename={f.filename}
+													/>
+												</td>
+											</tr>
+										)}
+									</>
 								))}
 							</tbody>
 						</table>
