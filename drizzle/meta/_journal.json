@@ -8,6 +8,13 @@
       "when": 1776728697855,
       "tag": "0000_right_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777846959162,
+      "tag": "0001_chunky_spirit",
+      "breakpoints": true
     }
   ]
 }

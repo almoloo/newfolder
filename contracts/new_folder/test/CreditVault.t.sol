@@ -8,15 +8,14 @@ import {CreditVault} from "../src/CreditVault.sol";
 contract CreditVaultTest is Test {
     CreditVault internal vault;
 
-    address internal admin = makeAddr("admin");
+    address payable internal treasury = payable(makeAddr("treasury"));
     address internal user = makeAddr("user");
-    address internal recipient = makeAddr("recipient");
 
     function setUp() external {
-        vault = new CreditVault(admin);
+        vault = new CreditVault(treasury);
     }
 
-    function testTopUpBalanceTracksUserDeposit() external {
+    function testTopUpForwardsToTreasury() external {
         vm.deal(user, 3 ether);
 
         vm.prank(user);
@@ -24,10 +23,12 @@ contract CreditVaultTest is Test {
 
         assertEq(vault.topUpBalanceOf(user), 1 ether);
         assertEq(vault.totalTopUps(), 1 ether);
-        assertEq(address(vault).balance, 1 ether);
+        // Contract holds nothing — all forwarded
+        assertEq(address(vault).balance, 0);
+        assertEq(treasury.balance, 1 ether);
     }
 
-    function testReceiveAlsoTracksDeposit() external {
+    function testReceiveForwardsToTreasury() external {
         vm.deal(user, 2 ether);
 
         vm.prank(user);
@@ -36,6 +37,8 @@ contract CreditVaultTest is Test {
         assertTrue(success);
         assertEq(vault.topUpBalanceOf(user), 0.5 ether);
         assertEq(vault.totalTopUps(), 0.5 ether);
+        assertEq(address(vault).balance, 0);
+        assertEq(treasury.balance, 0.5 ether);
     }
 
     function testTopUpBalanceRevertsOnZeroAmount() external {
@@ -44,24 +47,17 @@ contract CreditVaultTest is Test {
         vault.topUpBalance{value: 0}();
     }
 
-    function testWithdrawTransfersFundsWhenCalledByAdmin() external {
+    function testMultipleTopUpsAccumulate() external {
         vm.deal(user, 3 ether);
 
         vm.prank(user);
-        vault.topUpBalance{value: 1.25 ether}();
+        vault.topUpBalance{value: 1 ether}();
 
-        vm.prank(admin);
-        vault.withdraw(payable(recipient), 0.75 ether);
-
-        assertEq(recipient.balance, 0.75 ether);
-        assertEq(vault.totalWithdrawn(), 0.75 ether);
-        assertEq(address(vault).balance, 0.5 ether);
-        assertEq(vault.topUpBalanceOf(user), 1.25 ether);
-    }
-
-    function testWithdrawRevertsForNonAdmin() external {
         vm.prank(user);
-        vm.expectRevert(CreditVault.Unauthorized.selector);
-        vault.withdraw(payable(recipient), 1 ether);
+        vault.topUpBalance{value: 0.5 ether}();
+
+        assertEq(vault.topUpBalanceOf(user), 1.5 ether);
+        assertEq(vault.totalTopUps(), 1.5 ether);
+        assertEq(treasury.balance, 1.5 ether);
     }
 }
