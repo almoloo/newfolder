@@ -3,11 +3,11 @@ import { MemData } from '@0gfoundation/0g-ts-sdk';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import {
-        createIndexer,
-        createSigner,
-        encodeStorageHash,
-        UPLOAD_FEE_PER_BYTE,
-        ZG_EVM_RPC,
+	createIndexer,
+	createSigner,
+	encodeStorageHash,
+	UPLOAD_FEE_PER_BYTE,
+	ZG_EVM_RPC,
 } from '@/lib/storage/client';
 
 export const dynamic = 'force-dynamic';

@@ -14,8 +14,7 @@ function getDb(): DrizzleDB {
 	const connectionString = process.env.DATABASE_URL;
 	if (!connectionString) throw new Error('DATABASE_URL is not set');
 	const sql =
-		globalForDb._sql ??
-		postgres(connectionString, { prepare: false });
+		globalForDb._sql ?? postgres(connectionString, { prepare: false });
 	if (process.env.NODE_ENV !== 'production') globalForDb._sql = sql;
 	globalForDb._db = drizzle(sql, { schema });
 	return globalForDb._db;

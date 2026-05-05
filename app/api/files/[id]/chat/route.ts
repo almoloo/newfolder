@@ -16,9 +16,9 @@ import {
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import {
-        getFileContext,
-        setFileContext,
-        type CachedFileContext,
+	getFileContext,
+	setFileContext,
+	type CachedFileContext,
 } from '@/lib/chat/file-context-cache';
 
 export const dynamic = 'force-dynamic';
