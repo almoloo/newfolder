@@ -1,0 +1,33 @@
+# Dependencies (reinstalled inside the image)
+node_modules
+npm-debug.log*
+
+# Next.js build output
+.next
+out
+
+# Local env files — secrets are injected at runtime, never baked in
+.env
+.env.*
+!.env.example
+
+# Foundry / contract artefacts (not needed at runtime)
+contracts
+contracts/new_folder/out
+contracts/new_folder/cache
+
+# Git and editor metadata
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Misc
+README.md
+AGENTS.md
+CLAUDE.md
