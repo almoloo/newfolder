@@ -44,7 +44,6 @@ export function encodeStorageHash(
  * Decode a stored storageHash back into one or more root hashes
  * for use with indexer.download().
  */
-export function decodeStorageHash(storageHash: string): string | string[] {
-	const parts = storageHash.split('|');
-	return parts.length === 1 ? parts[0] : parts;
+export function decodeStorageHash(storageHash: string): string[] {
+	return storageHash.split('|');
 }
