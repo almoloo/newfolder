@@ -28,7 +28,7 @@ WORKDIR /app
 # ---- deps-dev: full node_modules (needed for build + migrations) -------------
 FROM base AS deps-dev
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # ---- builder: compile the Next.js app ----------------------------------------
 FROM base AS builder
