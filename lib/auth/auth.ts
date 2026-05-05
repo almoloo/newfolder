@@ -4,11 +4,7 @@ import { siwe } from 'better-auth/plugins/siwe';
 import { generateNonce, SiweMessage } from 'siwe';
 import { db, schema } from '@/lib/db';
 
-const authSecret = process.env.BETTER_AUTH_SECRET;
-
-if (!authSecret) {
-	throw new Error('BETTER_AUTH_SECRET is not set');
-}
+const authSecret = process.env.BETTER_AUTH_SECRET ?? '';
 
 const baseURL =
 	process.env.BETTER_AUTH_URL ??
