@@ -2,6 +2,8 @@ import { and, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // Returns the status of a specific credit purchase so the UI can poll until it moves from pending to credited.
 
 class BadRequestError extends Error {}

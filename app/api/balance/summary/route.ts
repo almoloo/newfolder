@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import type { CreditBalanceSnapshot } from '@/lib/types/credits';
 
+export const dynamic = 'force-dynamic';
+
 // Returns the authenticated user’s credit snapshot for the header/cards: available, locked, total credited, total debited. This is the main balance endpoint.
 
 const emptySnapshot: CreditBalanceSnapshot = {

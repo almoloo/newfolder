@@ -2,6 +2,8 @@ import { and, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // GET  — fetch metadata for a single file owned by the authenticated user.
 // DELETE — remove the DB record (0G data is immutable on-chain).
 

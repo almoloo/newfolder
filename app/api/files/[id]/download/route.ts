@@ -7,6 +7,8 @@ import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import { createIndexer, decodeStorageHash } from '@/lib/storage/client';
 
+export const dynamic = 'force-dynamic';
+
 // GET — download a file from 0G storage.
 // The SDK writes to a file path, so we use a temp file then stream it back.
 

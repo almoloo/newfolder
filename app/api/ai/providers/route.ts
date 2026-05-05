@@ -1,6 +1,8 @@
 import { auth } from '@/lib/auth/auth';
 import { createBroker } from '@/lib/ai/client';
 
+export const dynamic = 'force-dynamic';
+
 // GET — list available inference providers on the 0G compute network.
 
 export async function GET(request: Request) {

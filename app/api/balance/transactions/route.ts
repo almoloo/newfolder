@@ -2,15 +2,16 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import {
-	creditReferenceTypes,
-	creditTransactionStatuses,
-	creditTransactionTypes,
-	type CreditTransactionHistoryItem,
-	type CreditReferenceType,
-	type CreditTransactionStatus,
-	type CreditTransactionType,
+        creditReferenceTypes,
+        creditTransactionStatuses,
+        creditTransactionTypes,
+        type CreditTransactionHistoryItem,
+        type CreditReferenceType,
+        type CreditTransactionStatus,
+        type CreditTransactionType,
 } from '@/lib/types/credits';
 
+export const dynamic = 'force-dynamic';
 // Returns paginated credit history for the balance section. Add filters like type, status, and referenceType so the UI can support “all / purchases / usage / refunds” without extra endpoints.
 
 const DEFAULT_PAGE = 1;

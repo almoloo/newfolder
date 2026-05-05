@@ -1,5 +1,7 @@
 import { auth } from '@/lib/auth/auth';
 
+export const dynamic = 'force-dynamic';
+
 // Returns the fixed chat price in stars per 100 characters.
 // 1 star = 10^15 neuron. 1 A0GI = 1000 stars.
 // Configured via CHAT_PRICE_PER_100_CHARS env var.

@@ -3,13 +3,14 @@ import { MemData } from '@0gfoundation/0g-ts-sdk';
 import { auth } from '@/lib/auth/auth';
 import { db, schema } from '@/lib/db';
 import {
-	createIndexer,
-	createSigner,
-	encodeStorageHash,
-	UPLOAD_FEE_PER_BYTE,
-	ZG_EVM_RPC,
+        createIndexer,
+        createSigner,
+        encodeStorageHash,
+        UPLOAD_FEE_PER_BYTE,
+        ZG_EVM_RPC,
 } from '@/lib/storage/client';
 
+export const dynamic = 'force-dynamic';
 // POST — upload a file to 0G storage, deduct credits, record in DB.
 // GET  — list the authenticated user's files (paginated).
 

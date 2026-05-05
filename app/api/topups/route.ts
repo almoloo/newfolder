@@ -10,6 +10,8 @@ import {
 import { requiredChain, contractAddress } from '@/lib/web3/chains';
 import { depositFundToComputeLedger } from '@/lib/ai/client';
 
+export const dynamic = 'force-dynamic';
+
 const VAULT_ABI = parseAbi([
 	'event BalanceToppedUp(address indexed account, uint256 amount, uint256 newAccountTotal)',
 ]);
