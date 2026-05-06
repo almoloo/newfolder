@@ -19,7 +19,9 @@ function FeatureItem({
 		<div className="flex flex-col items-center text-center gap-4 p-6 ">
 			<div>{icon}</div>
 			<h4 className="text-base font-semibold">{title}</h4>
-			<p className="text-sm text-gray-600">{description}</p>
+			<p className="text-sm text-slate-600 dark:text-slate-300">
+				{description}
+			</p>
 		</div>
 	);
 }
@@ -66,8 +68,10 @@ export default function FeaturesSection() {
 	return (
 		<section className="flex flex-col gap-10 my-20">
 			<div className="flex flex-col justify-center text-center gap-2">
-				<h3 className="text-xl font-bold">Why It&apos;s Different</h3>
-				<span className="text-slate-600">
+				<h3 className="text-xl font-bold dark:text-slate-200">
+					Why It&apos;s Different
+				</h3>
+				<span className="text-slate-600 dark:text-slate-300">
 					Just your wallet, your files, and AI that works on-chain.
 				</span>
 			</div>
