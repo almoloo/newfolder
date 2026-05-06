@@ -17,6 +17,7 @@ import {
 	useSwitchChain,
 	useWalletClient,
 } from 'wagmi';
+import { useRouter, usePathname } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 import { requiredChain } from '@/lib/web3/config';
 
@@ -65,6 +66,8 @@ export default function WalletAuthButton() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [shouldAutoSignIn, setShouldAutoSignIn] = useState(false);
+	const router = useRouter();
+	const pathname = usePathname();
 
 	const isAuthenticated = Boolean(
 		session.data?.session && session.data?.user,
@@ -183,6 +186,14 @@ export default function WalletAuthButton() {
 			void runAutoSignIn();
 		}
 	}, [isAuthenticated, isConnected, shouldAutoSignIn]);
+
+	useEffect(() => {
+		if (isAuthenticated && pathname === '/') {
+			router.push('/dashboard');
+		} else if (!isAuthenticated && pathname !== '/') {
+			router.push('/');
+		}
+	}, [isAuthenticated, pathname]);
 
 	function getPrimaryLabel(isConnectedToWallet: boolean) {
 		if (!isConnectedToWallet) {
