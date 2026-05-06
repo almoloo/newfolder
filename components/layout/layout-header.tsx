@@ -1,6 +1,7 @@
 import WalletAuthButton from '@/components/wallet/wallet-auth-button';
 import Logo from '@/components/layout/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import HeaderSlot from '@/components/layout/header-slot';
 
 export default function LayoutHeader() {
 	return (
@@ -12,6 +13,7 @@ export default function LayoutHeader() {
 					<WalletAuthButton />
 				</div>
 			</div>
+			<HeaderSlot />
 		</header>
 	);
 }
