@@ -2,12 +2,17 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-	--background: #ffffff;
-	--foreground: #171717;
+@theme inline {
+	--font-sans: var(--font-manrope);
 }
 
-@theme inline {
-	--font-sans: var(--font-geist-sans);
-	--font-mono: var(--font-geist-mono);
+@layer base {
+	body {
+		font-family: var(--font-sans);
+		@apply bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-slate-300;
+	}
+
+	.centered-container {
+		@apply mx-auto w-full max-w-4xl px-6 py-4;
+	}
 }

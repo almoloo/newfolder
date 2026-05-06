@@ -1,18 +1,13 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import '@rainbow-me/rainbowkit/styles.css';
 import './globals.css';
 import LayoutHeader from '@/components/layout/layout-header';
 import LayoutFooter from '@/components/layout/layout-footer';
 import AppProviders from '@/components/providers/app-providers';
 
-const geistSans = Geist({
-	variable: '--font-geist-sans',
-	subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-	variable: '--font-geist-mono',
+const manrope = Manrope({
+	variable: '--font-manrope',
 	subsets: ['latin'],
 });
 
@@ -29,12 +24,22 @@ export default function RootLayout({
 	return (
 		<html
 			lang="en"
-			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+			className={`${manrope.variable} h-full antialiased`}
+			suppressHydrationWarning
 		>
+			<head>
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+					}}
+				/>
+			</head>
 			<body className="min-h-full flex flex-col">
 				<AppProviders>
 					<LayoutHeader />
-					<div className="flex flex-col grow">{children}</div>
+					<div className="flex flex-col grow centered-container">
+						{children}
+					</div>
 					<LayoutFooter />
 				</AppProviders>
 			</body>
