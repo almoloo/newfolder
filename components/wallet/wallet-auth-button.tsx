@@ -188,12 +188,13 @@ export default function WalletAuthButton() {
 	}, [isAuthenticated, isConnected, shouldAutoSignIn]);
 
 	useEffect(() => {
+		if (session.isPending) return;
 		if (isAuthenticated && pathname === '/') {
 			router.push('/dashboard');
 		} else if (!isAuthenticated && pathname !== '/') {
 			router.push('/');
 		}
-	}, [isAuthenticated, pathname]);
+	}, [isAuthenticated, session.isPending, pathname]);
 
 	function getPrimaryLabel(isConnectedToWallet: boolean) {
 		if (!isConnectedToWallet) {

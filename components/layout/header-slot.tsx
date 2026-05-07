@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import HeroSection from '@/components/homepage/hero-section';
+import NavigationMenu from '@/components/layout/navigation-menu';
 
 export default function HeaderSlot() {
 	const pathname = usePathname();
@@ -11,5 +12,5 @@ export default function HeaderSlot() {
 		return <HeroSection />;
 	}
 
-	return null;
+	return <NavigationMenu />;
 }

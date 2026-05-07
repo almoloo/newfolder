@@ -37,7 +37,7 @@ export default function RootLayout({
 			<body className="min-h-full flex flex-col">
 				<AppProviders>
 					<LayoutHeader />
-					<div className="flex flex-col grow centered-container">
+					<div className="flex flex-col grow centered-container my-5">
 						{children}
 					</div>
 					<LayoutFooter />
