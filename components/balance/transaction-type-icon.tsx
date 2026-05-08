@@ -9,11 +9,14 @@ interface TxTypeIconProps {
 
 export default function TxTypeIcon({ type }: TxTypeIconProps) {
 	const isIncoming =
-		type === 'adjustment' || type === 'topup' || type === 'refund';
+		type === 'adjustment' ||
+		type === 'topup' ||
+		type === 'refund' ||
+		type === 'topup_credit';
 
 	return (
 		<div
-			className={`aspect-square rounded-full p-3 bg-slate-500/10 dark:bg-slate-300/10 shrink-0 ${isIncoming ? 'text-emerald-700 dark:text-emerald-500' : 'text-rose-700 dark:text-rose-500'}`}
+			className={`aspect-square rounded-full p-3 shrink-0 ${isIncoming ? 'bg-emerald-700/10 text-emerald-700 dark:text-emerald-500' : 'bg-rose-700/10 text-rose-700 dark:text-rose-500'}`}
 		>
 			{isIncoming ? (
 				<ArrowDownRightIcon

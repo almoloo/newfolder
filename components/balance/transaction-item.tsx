@@ -1,6 +1,6 @@
 import type { CreditTransactionHistoryItem } from '@/lib/types';
-import TxTypeIcon from './transaction-type-icon';
-import CreditAmount from './credit-amount';
+import TxTypeIcon from '@/components/balance/transaction-type-icon';
+import CreditAmount from '@/components/balance/credit-amount';
 
 interface TransactionItemProps {
 	transaction: CreditTransactionHistoryItem;
@@ -18,7 +18,7 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
 					{new Date(transaction.createdAt).toLocaleString()}
 				</time>
 				{transaction.description && (
-					<p className="text-sm text-neutral-800 dark:text-neutral-200">
+					<p className="text-sm text-neutral-800 dark:text-neutral-200 break-all">
 						{transaction.description}
 					</p>
 				)}

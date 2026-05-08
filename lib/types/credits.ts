@@ -1,5 +1,6 @@
 export const creditTransactionTypes = [
 	'topup',
+	'topup_credit',
 	'debit',
 	'refund',
 	'adjustment',

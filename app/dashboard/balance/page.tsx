@@ -33,8 +33,14 @@ export default async function BalancePage({
 					/>
 				</Suspense>
 			</main>
-			<aside className="border-l border-l-neutral-300/50 p-4">
-				<TopupSection />
+			<aside>
+				<Suspense
+					fallback={
+						<div className="bg-white dark:bg-zinc-900 rounded-xl shadow animate-pulse h-64" />
+					}
+				>
+					<TopupSection userId={session.user.id} />
+				</Suspense>
 			</aside>
 		</div>
 	);
