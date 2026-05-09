@@ -1,5 +1,6 @@
 'use client';
 
+import { useBalance, useInvalidateBalance } from '@/lib/hooks/use-balance';
 import { useEffect, useRef, useState } from 'react';
 
 interface Message {
@@ -43,9 +44,12 @@ export default function FileChat({ fileId, filename, providerAddress }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [loadingHistory, setLoadingHistory] = useState(true);
 	const [pricing, setPricing] = useState<Pricing | null>(null);
-	const [balance, setBalance] = useState<string>('0');
 	const [lastFee, setLastFee] = useState<string | null>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
+
+	const { data: balanceData } = useBalance();
+	const invalidateBalance = useInvalidateBalance();
+	const balance = balanceData?.availableAmount ?? '0';
 
 	// Fetch pricing once on mount
 	useEffect(() => {
@@ -55,22 +59,6 @@ export default function FileChat({ fileId, filename, providerAddress }: Props) {
 				if (d.pricePerHundredChars) setPricing(d as Pricing);
 			})
 			.catch(() => {});
-	}, []);
-
-	// Fetch current balance (called on mount + after each send)
-	function refreshBalance() {
-		fetch('/api/balance/summary')
-			.then((r) => r.json())
-			.then((d) => {
-				if (d.availableAmount !== undefined)
-					setBalance(String(d.availableAmount));
-				else console.warn('[balance] unexpected response', d);
-			})
-			.catch((e) => console.error('[balance] fetch error', e));
-	}
-
-	useEffect(() => {
-		refreshBalance();
 	}, []);
 
 	// Compute estimated fee for current input text
@@ -195,16 +183,13 @@ export default function FileChat({ fileId, filename, providerAddress }: Props) {
 			setMessages((prev) => prev.slice(0, -1));
 		} finally {
 			setStreaming(false);
-			// Refresh balance and compute actual amount charged
-			fetch('/api/balance/summary')
-				.then((r) => r.json())
-				.then((d) => {
-					if (d.availableAmount !== undefined) {
-						const after = String(d.availableAmount);
-						const charged = BigInt(preSendBalance) - BigInt(after);
-						if (charged > 0n) setLastFee(String(charged));
-						setBalance(after);
-					}
+			// Invalidate balance query and compute actual amount charged
+			const before = BigInt(preSendBalance);
+			invalidateBalance()
+				.then(() => {
+					const after = BigInt(balanceData?.availableAmount ?? '0');
+					const charged = before - after;
+					if (charged > 0n) setLastFee(String(charged));
 				})
 				.catch(() => {});
 		}

@@ -1,18 +1,11 @@
+'use client';
+
 import CreditAmount from '@/components/balance/credit-amount';
 import TopupForm from '@/components/balance/topup-form';
-import { db, schema } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { useBalance } from '@/lib/hooks/use-balance';
 
-interface TopupSectionProps {
-	userId: string;
-}
-
-export default async function TopupSection({ userId }: TopupSectionProps) {
-	const balance = await db.query.creditBalance.findFirst({
-		where: eq(schema.creditBalance.userId, userId),
-		columns: { availableAmount: true },
-	});
-
+export default function TopupSection() {
+	const { data: balance } = useBalance();
 	const availableAmount = balance?.availableAmount ?? '0';
 
 	return (

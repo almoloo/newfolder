@@ -29,6 +29,7 @@
 		"postgres": "^3.4.9",
 		"react": "19.2.4",
 		"react-dom": "19.2.4",
+		"react-dropzone": "^15.0.0",
 		"siwe": "^3.0.0",
 		"viem": "^2.48.1",
 		"wagmi": "^2.19.5",

@@ -1,3 +1,9 @@
+import UploadBox from '@/components/files/upload-box';
+
 export default function DashboardPage() {
-	return <div>Enter</div>;
+	return (
+		<div>
+			<UploadBox />
+		</div>
+	);
 }

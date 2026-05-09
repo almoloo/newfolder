@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
+import Script from 'next/script';
 import '@rainbow-me/rainbowkit/styles.css';
 import './globals.css';
 import LayoutHeader from '@/components/layout/layout-header';
@@ -28,7 +29,9 @@ export default function RootLayout({
 			suppressHydrationWarning
 		>
 			<head>
-				<script
+				<Script
+					id="theme-init"
+					strategy="beforeInteractive"
 					dangerouslySetInnerHTML={{
 						__html: `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
 					}}

@@ -19,6 +19,7 @@ import {
 } from 'wagmi';
 import { useRouter, usePathname } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
+import { useToast } from '@/components/layout/toast';
 import { requiredChain } from '@/lib/web3/config';
 
 function formatAddress(address: string) {
@@ -64,8 +65,8 @@ export default function WalletAuthButton() {
 	const { signMessageAsync } = useSignMessage();
 	const session = authClient.useSession();
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [shouldAutoSignIn, setShouldAutoSignIn] = useState(false);
+	const toast = useToast();
 	const router = useRouter();
 	const pathname = usePathname();
 
@@ -94,12 +95,11 @@ export default function WalletAuthButton() {
 		}
 
 		if (!address || !isConnected) {
-			setError('Connect a wallet before signing in.');
+			toast.error('Connect a wallet before signing in.');
 			return;
 		}
 
 		setIsSubmitting(true);
-		setError(null);
 
 		try {
 			await ensureRequiredChain();
@@ -156,7 +156,7 @@ export default function WalletAuthButton() {
 
 			session.refetch();
 		} catch (caughtError) {
-			setError(
+			toast.error(
 				caughtError instanceof Error
 					? caughtError.message
 					: 'Unable to sign in with wallet.',
@@ -213,7 +213,6 @@ export default function WalletAuthButton() {
 	}
 
 	async function handleSignOut() {
-		setError(null);
 		setShouldAutoSignIn(false);
 		await authClient.signOut();
 		disconnect();
@@ -227,8 +226,6 @@ export default function WalletAuthButton() {
 				const connected = ready && Boolean(account) && isConnected;
 
 				async function handlePrimaryAction() {
-					setError(null);
-
 					if (!connected) {
 						setShouldAutoSignIn(true);
 						openConnectModal();
@@ -291,11 +288,6 @@ export default function WalletAuthButton() {
 							<p className="max-w-xs text-right text-xs text-amber-600 dark:text-amber-400">
 								The app will try to add {requiredChain.name}{' '}
 								automatically if it is missing.
-							</p>
-						) : null}
-						{error ? (
-							<p className="max-w-xs text-right text-xs text-red-600 dark:text-red-400">
-								{error}
 							</p>
 						) : null}
 					</div>

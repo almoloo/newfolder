@@ -11,6 +11,7 @@ import { WagmiProvider } from 'wagmi';
 import { wagmiConfig } from '@/lib/web3/config';
 import { IconContext } from '@phosphor-icons/react';
 import { ThemeProvider, useTheme } from '@/components/providers/theme-provider';
+import { ToastProvider } from '@/components/layout/toast';
 
 interface AppProvidersProps {
 	children: React.ReactNode;
@@ -42,7 +43,7 @@ export default function AppProviders({ children }: AppProvidersProps) {
 								mirrored: false,
 							}}
 						>
-							{children}
+							<ToastProvider>{children}</ToastProvider>
 						</IconContext.Provider>
 					</RainbowKitWithTheme>
 				</WagmiProvider>

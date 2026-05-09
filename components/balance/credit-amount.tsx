@@ -5,15 +5,22 @@ import { StarIcon } from '@phosphor-icons/react';
 
 interface CreditAmountProps {
 	amount: string;
-	size?: 'small' | 'large';
+	size?: 'small' | 'medium' | 'large';
 }
 
 export default function CreditAmount({
 	amount,
-	size = 'small',
+	size = 'medium',
 }: CreditAmountProps) {
-	const iconSize = size === 'small' ? 16 : 24;
-	const textSize = size === 'small' ? 'text-lg' : 'text-2xl';
+	// const iconSize = size === 'medium' ? 16 : 24;
+	// const textSize = size === 'medium' ? 'text-lg' : 'text-2xl';
+	const iconSize = size === 'small' ? 12 : size === 'medium' ? 16 : 24;
+	const textSize =
+		size === 'small'
+			? 'text-sm'
+			: size === 'medium'
+				? 'text-lg'
+				: 'text-2xl';
 
 	return (
 		<div className={`flex items-center gap-1 ${textSize} font-medium`}>

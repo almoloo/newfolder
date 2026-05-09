@@ -8,8 +8,8 @@ import {
 	SpinnerIcon,
 	WarningIcon,
 } from '@phosphor-icons/react';
-import { N } from 'ethers';
-import { useRouter } from 'next/navigation';
+import { useInvalidateBalance } from '@/lib/hooks/use-balance';
+import { useToast } from '@/components/layout/toast';
 import { useState } from 'react';
 import {
 	useAccount,
@@ -21,8 +21,8 @@ import {
 
 export default function TopupForm() {
 	const [amount, setAmount] = useState('');
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState(false);
+
+	const toast = useToast();
 
 	const { address, chainId } = useAccount();
 	const publicClient = usePublicClient({ chainId: requiredChain.id });
@@ -37,7 +37,7 @@ export default function TopupForm() {
 	});
 	const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
 
-	const router = useRouter();
+	const invalidateBalance = useInvalidateBalance();
 
 	const stars = parseInt(amount, 10);
 	const price = !isNaN(stars) ? starsToZeroG(stars).toString() : '0';
@@ -47,22 +47,20 @@ export default function TopupForm() {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		setError(null);
-		setSuccess(false);
 
 		if (!contractAddress) {
-			setError('Contract address not configured.');
+			toast.error('Contract address not configured.');
 			return;
 		}
 		if (!address) {
-			setError('No wallet connected.');
+			toast.error('No wallet connected.');
 			return;
 		}
 		if (wrongChain) {
 			try {
 				await switchChainAsync({ chainId: requiredChain.id });
 			} catch {
-				setError(
+				toast.error(
 					`Please switch to ${requiredChain.name} in your wallet.`,
 				);
 				return;
@@ -79,7 +77,7 @@ export default function TopupForm() {
 				chainId: requiredChain.id,
 			});
 		} catch (err) {
-			setError(
+			toast.error(
 				err instanceof Error ? err.message : 'Transaction rejected.',
 			);
 			return;
@@ -90,7 +88,7 @@ export default function TopupForm() {
 			if (!publicClient) throw new Error('No RPC client available.');
 			await publicClient.waitForTransactionReceipt({ hash });
 		} catch (err) {
-			setError(
+			toast.error(
 				err instanceof Error
 					? err.message
 					: 'Transaction failed on-chain.',
@@ -118,9 +116,11 @@ export default function TopupForm() {
 						body?.error ?? `Server error ${res.status}`,
 					);
 				}
-				setSuccess(true);
 				setAmount('');
-				router.refresh();
+				invalidateBalance();
+				toast.success(
+					'Top-up confirmed! Your balance has been updated.',
+				);
 				return;
 			} catch (err) {
 				lastError =
@@ -134,7 +134,7 @@ export default function TopupForm() {
 				}
 			}
 		}
-		setError(lastError?.message ?? 'Failed to credit balance.');
+		toast.error(lastError?.message ?? 'Failed to credit balance.');
 	}
 
 	return (
@@ -169,8 +169,6 @@ export default function TopupForm() {
 				value={amount}
 				onChange={(e) => {
 					setAmount(e.target.value);
-					setError(null);
-					setSuccess(false);
 				}}
 				disabled={loading}
 			/>
@@ -182,26 +180,6 @@ export default function TopupForm() {
 					/>
 					Wrong network. Will switch to {requiredChain.name} on
 					submit.
-				</p>
-			)}
-			{error && (
-				<p className="mt-2 flex items-center gap-3 text-xs border bg-rose-400/10 border-rose-400/20 text-rose-700 dark:text-rose-400 leading-relaxed rounded px-3 py-2">
-					<WarningIcon
-						size={28}
-						weight="fill"
-						className="text-rose-300 dark:text-rose-500"
-					/>
-					{error}
-				</p>
-			)}
-			{success && (
-				<p className="mt-2 flex items-center gap-3 text-xs border bg-emerald-400/10 border-emerald-400/20 text-emerald-700 dark:text-emerald-400 leading-relaxed rounded px-3 py-2">
-					<CheckSquareOffsetIcon
-						size={28}
-						weight="bold"
-						className="text-emerald-400 dark:text-emerald-500"
-					/>
-					Top-up confirmed! Your balance has been updated.
 				</p>
 			)}
 			<button
