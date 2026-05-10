@@ -1,9 +1,5 @@
-import { and, eq } from 'drizzle-orm';
-import { auth } from '@/lib/auth/auth';
-import { db, schema } from '@/lib/db';
-import { headers } from 'next/headers';
-import { redirect, notFound } from 'next/navigation';
-import { getFileCategory } from '@/lib/utils';
+import { notFound } from 'next/navigation';
+import { eq } from 'drizzle-orm';
 import {
 	FileIcon,
 	FileImageIcon,
@@ -11,11 +7,11 @@ import {
 	FileAudioIcon,
 	FileTextIcon,
 } from '@phosphor-icons/react/dist/ssr';
-import type { FileCategory } from '@/lib/utils';
-import DownloadButton from '@/components/files/download-button';
+import { db, schema } from '@/lib/db';
+import { decodeShareId } from '@/lib/share-id';
+import { getFileCategory, type FileCategory } from '@/lib/utils';
 import ShareButton from '@/components/files/share-button';
-
-export const dynamic = 'force-dynamic';
+import DownloadButton from '@/components/files/download-button';
 
 const CATEGORY_ICONS: Record<FileCategory, React.ElementType> = {
 	image: FileImageIcon,
@@ -33,24 +29,52 @@ function formatBytes(bytes: string): string {
 	return `${(n / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
 }
 
-export default async function FilePage({
+function Row({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="flex justify-between gap-4 px-4 py-3 text-sm bg-white/5">
+			<dt className="text-neutral-500 shrink-0">{label}</dt>
+			<dd className="text-neutral-900 dark:text-neutral-100 text-right">
+				{children}
+			</dd>
+		</div>
+	);
+}
+
+export default async function ShareFile({
 	params,
 }: {
 	params: Promise<{ fileId: string }>;
 }) {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session) redirect('/');
-
 	const { fileId } = await params;
 
+	let uuid: string;
+	try {
+		uuid = decodeShareId(fileId);
+	} catch {
+		notFound();
+	}
+
 	const file = await db.query.file.findFirst({
-		where: and(
-			eq(schema.file.id, fileId),
-			eq(schema.file.ownerId, session.user.id),
-		),
+		where: eq(schema.file.id, uuid),
+		columns: {
+			id: true,
+			storageHash: true,
+			filename: true,
+			mimeType: true,
+			sizeBytes: true,
+			createdAt: true,
+		},
 	});
 
-	if (!file) notFound();
+	if (!file) {
+		notFound();
+	}
 
 	const category = getFileCategory(file.mimeType);
 	const Icon = CATEGORY_ICONS[category];
@@ -76,49 +100,21 @@ export default async function FilePage({
 			</div>
 
 			<dl className="divide-y divide-neutral-200 dark:divide-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
-				<Row label="Status">
-					<span className="capitalize">{file.status}</span>
-				</Row>
 				<Row label="Size">{formatBytes(file.sizeBytes)}</Row>
 				<Row label="Storage Hash">
 					<span className="font-mono text-xs break-all">
 						{file.storageHash}
 					</span>
 				</Row>
-				<Row label="File ID">
-					<span className="font-mono text-xs">{file.id}</span>
-				</Row>
 				<Row label="Uploaded">
-					{
-						<time dateTime={new Date(file.createdAt).toISOString()}>
-							{new Date(file.createdAt).toLocaleString(
-								undefined,
-								{
-									dateStyle: 'medium',
-									timeStyle: 'short',
-								},
-							)}
-						</time>
-					}
+					<time dateTime={new Date(file.createdAt).toISOString()}>
+						{new Date(file.createdAt).toLocaleString(undefined, {
+							dateStyle: 'medium',
+							timeStyle: 'short',
+						})}
+					</time>
 				</Row>
 			</dl>
-		</div>
-	);
-}
-
-function Row({
-	label,
-	children,
-}: {
-	label: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div className="flex justify-between gap-4 px-4 py-3 text-sm bg-white/5">
-			<dt className="text-neutral-500 shrink-0">{label}</dt>
-			<dd className="text-neutral-900 dark:text-neutral-100 text-right">
-				{children}
-			</dd>
 		</div>
 	);
 }

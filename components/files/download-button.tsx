@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/layout/toast';
+import { DownloadIcon, SpinnerIcon } from '@phosphor-icons/react';
 
 interface DownloadButtonProps {
 	fileId: string;
@@ -39,8 +40,16 @@ export default function DownloadButton({ fileId }: DownloadButtonProps) {
 		<button
 			onClick={handleDownload}
 			disabled={loading}
-			className="ml-auto px-3 py-1 text-sm bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+			className="flex items-center gap-4 border-zinc-800 bg-zinc-800 dark:bg-zinc-500 text-white disabled:cursor-not-allowed px-5 py-2 rounded cursor-pointer hover:bg-zinc-700 disabled:bg-zinc-400"
 		>
+			{loading ? (
+				<SpinnerIcon
+					size={16}
+					className="animate-spin"
+				/>
+			) : (
+				<DownloadIcon size={16} />
+			)}
 			{loading ? 'Preparing...' : 'Download'}
 		</button>
 	);

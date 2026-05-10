@@ -34,5 +34,9 @@ export default function HeaderSlot() {
 		return <HeroSection />;
 	}
 
+	if (pathname.startsWith('/share/')) {
+		return null;
+	}
+
 	return <NavigationMenu fileTitle={filename} />;
 }
