@@ -100,7 +100,7 @@ export default function UploadForm() {
 				className={`mt-1 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 transition-colors ${uploading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
 					isDragActive
 						? 'border-rose-400 bg-rose-50 dark:bg-rose-950/20'
-						: 'border-neutral-300/60 dark:border-neutral-700/60 hover:border-rose-300 dark:hover:border-rose-700'
+						: 'border-neutral-300/60 dark:border-neutral-700/60 hover:border-rose-300 dark:hover:border-rose-900'
 				}`}
 			>
 				<input {...getInputProps()} />
@@ -167,7 +167,7 @@ export default function UploadForm() {
 			<button
 				type="submit"
 				disabled={!file || uploading || !hasEnough}
-				className="mt-3 w-full rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600 disabled:bg-rose-300 disabled:cursor-not-allowed"
+				className="mt-3 w-full rounded-md bg-rose-500 dark:bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600 dark:hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed dark:disabled:bg-rose-800/30 dark:disabled:text-rose-300/50 cursor-pointer"
 			>
 				{uploading ? (
 					<SpinnerIcon

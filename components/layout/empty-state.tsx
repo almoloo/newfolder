@@ -1,11 +1,11 @@
 'use client';
 
-import { HeartBreakIcon } from '@phosphor-icons/react';
+import { HeartBreakIcon, FileDashedIcon } from '@phosphor-icons/react';
 
 interface EmptyStateProps {
 	title: string;
 	description: string;
-	icon: 'heartbreak';
+	icon: 'heartbreak' | 'filedashed';
 }
 
 export default function EmptyState({
@@ -18,6 +18,12 @@ export default function EmptyState({
 			<div className="text-slate-700">
 				{icon === 'heartbreak' && (
 					<HeartBreakIcon
+						weight="duotone"
+						size={48}
+					/>
+				)}
+				{icon === 'filedashed' && (
+					<FileDashedIcon
 						weight="duotone"
 						size={48}
 					/>

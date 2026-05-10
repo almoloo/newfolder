@@ -49,3 +49,53 @@ export function summarizeAmount(amount: number): string {
 		return amount.toString();
 	}
 }
+
+export type FileCategory = 'image' | 'video' | 'audio' | 'document' | 'other';
+
+const DOCUMENT_TYPES = new Set([
+	'application/pdf',
+	'application/msword',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/vnd.ms-excel',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	'application/vnd.ms-powerpoint',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+	'application/json',
+	'application/xml',
+	'application/rtf',
+	'application/csv',
+]);
+
+export function getFileCategory(
+	mimeType: string | null | undefined,
+): FileCategory {
+	if (!mimeType) return 'other';
+	if (mimeType.startsWith('image/')) return 'image';
+	if (mimeType.startsWith('video/')) return 'video';
+	if (mimeType.startsWith('audio/')) return 'audio';
+	if (mimeType.startsWith('text/')) return 'document';
+	if (DOCUMENT_TYPES.has(mimeType)) return 'document';
+	return 'other';
+}
+
+export function isChatSupported(mimeType: string | null | undefined): boolean {
+	return getFileCategory(mimeType) === 'document';
+}
+
+export function timeAgo(date: Date | string): string {
+	const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+	if (seconds < 60) return 'just now';
+	const intervals: [number, string][] = [
+		[31536000, 'year'],
+		[2592000, 'month'],
+		[604800, 'week'],
+		[86400, 'day'],
+		[3600, 'hour'],
+		[60, 'minute'],
+	];
+	for (const [secs, label] of intervals) {
+		const n = Math.floor(seconds / secs);
+		if (n >= 1) return `${n} ${label}${n > 1 ? 's' : ''} ago`;
+	}
+	return 'just now';
+}

@@ -79,7 +79,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 								className="text-rose-400 shrink-0 mt-0.5"
 							/>
 						)}
-						<span className="grow min-w-0 break-words">
+						<span className="grow min-w-0 wrap-break-word">
 							{t.message}
 						</span>
 						<button

@@ -9,7 +9,7 @@ export default function UploadBox() {
 	const availableAmount = balance?.availableAmount ?? '0';
 
 	return (
-		<div className="flex flex-col gap-3 bg-white dark:bg-zinc-900 rounded-xl shadow p-4">
+		<section className="flex flex-col gap-3 bg-white dark:bg-zinc-900 rounded-xl shadow p-4">
 			<div className="flex items-center justify-between">
 				<h3 className="font-bold">Upload File</h3>
 				<CreditAmount
@@ -18,6 +18,6 @@ export default function UploadBox() {
 				/>
 			</div>
 			<UploadForm />
-		</div>
+		</section>
 	);
 }
