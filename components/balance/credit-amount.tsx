@@ -6,11 +6,13 @@ import { StarIcon } from '@phosphor-icons/react';
 interface CreditAmountProps {
 	amount: string;
 	size?: 'small' | 'medium' | 'large';
+	color?: 'red' | 'green';
 }
 
 export default function CreditAmount({
 	amount,
 	size = 'medium',
+	color,
 }: CreditAmountProps) {
 	// const iconSize = size === 'medium' ? 16 : 24;
 	// const textSize = size === 'medium' ? 'text-lg' : 'text-2xl';
@@ -21,6 +23,14 @@ export default function CreditAmount({
 			: size === 'medium'
 				? 'text-lg'
 				: 'text-2xl';
+	const textColor =
+		color === 'red'
+			? 'text-red-700'
+			: color === 'green'
+				? 'text-emerald-700'
+				: Number(amount) > 0
+					? 'text-emerald-700'
+					: 'text-red-700';
 
 	return (
 		<div className={`flex items-center gap-1 ${textSize} font-medium`}>
@@ -29,9 +39,7 @@ export default function CreditAmount({
 				size={iconSize}
 				className="text-yellow-600"
 			/>
-			<span
-				className={`${Number(amount) > 0 ? 'text-emerald-700' : 'text-red-700'}`}
-			>
+			<span className={textColor}>
 				{summarizeAmount(neuronToStars(amount))}
 			</span>
 		</div>

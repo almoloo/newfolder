@@ -49,7 +49,7 @@ function ArchiveTabContent({ fileId }: { fileId: string }) {
 		<div className="flex flex-col gap-5 p-5">
 			{hasMore && (
 				<button
-					className="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 self-center py-1"
+					className="text-sm bg-neutral-500/5 hover:bg-neutral-500/10 active:bg-neutral-500/15 px-5 py-2 rounded-full text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 self-center cursor-pointer"
 					onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
 				>
 					Show more

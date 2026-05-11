@@ -7,12 +7,14 @@ interface MessageBubbleProps {
 	side: 'received' | 'sent';
 	text: string;
 	date: Date;
+	isStreaming?: boolean;
 }
 
 export default function MessageBubble({
 	side,
 	text,
 	date,
+	isStreaming,
 }: MessageBubbleProps) {
 	return (
 		<div
@@ -93,6 +95,9 @@ export default function MessageBubble({
 				>
 					{text}
 				</ReactMarkdown>
+				{isStreaming && (
+					<span className="inline-block animate-pulse">▍</span>
+				)}
 			</div>
 			<time
 				dateTime={date.toISOString()}

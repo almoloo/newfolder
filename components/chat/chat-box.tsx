@@ -26,7 +26,7 @@ export default function ChatBox({ fileId, filename, mimeType }: ChatBoxProps) {
 	}
 
 	return (
-		<div className="border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden flex flex-col">
+		<div className="border border-neutral-300/50 dark:border-neutral-700/50 rounded-lg overflow-hidden flex flex-col">
 			<TabBar
 				activeTab={activeTab}
 				onTabChange={setActiveTab}

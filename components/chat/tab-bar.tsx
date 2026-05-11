@@ -1,3 +1,6 @@
+import TabBalance from '@/components/chat/tab-balance';
+import TabButton from '@/components/chat/tab-button';
+
 type Tab = 'chat' | 'archive';
 
 interface TabBarProps {
@@ -7,27 +10,19 @@ interface TabBarProps {
 
 export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
 	return (
-		<div className="flex border-b border-neutral-200 dark:border-neutral-800">
-			<button
-				className={`px-4 py-2.5 text-sm font-medium transition-colors ${
-					activeTab === 'chat'
-						? 'text-neutral-900 dark:text-neutral-100 border-b-2 border-neutral-900 dark:border-neutral-100 -mb-px'
-						: 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-				}`}
+		<div className="flex">
+			<TabButton
+				title="Chat"
+				isActive={activeTab === 'chat'}
 				onClick={() => onTabChange('chat')}
-			>
-				Chat
-			</button>
-			<button
-				className={`px-4 py-2.5 text-sm font-medium transition-colors ${
-					activeTab === 'archive'
-						? 'text-neutral-900 dark:text-neutral-100 border-b-2 border-neutral-900 dark:border-neutral-100 -mb-px'
-						: 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-				}`}
+			/>
+			<TabButton
+				title="History"
+				isActive={activeTab === 'archive'}
 				onClick={() => onTabChange('archive')}
-			>
-				History
-			</button>
+			/>
+			<div className="grow border-b-3 border-b-neutral-300/50"></div>
+			<TabBalance />
 		</div>
 	);
 }

@@ -6,6 +6,12 @@ interface TransactionItemProps {
 	transaction: CreditTransactionHistoryItem;
 }
 export default function TransactionItem({ transaction }: TransactionItemProps) {
+	const isIncoming =
+		transaction.type === 'adjustment' ||
+		transaction.type === 'topup' ||
+		transaction.type === 'refund' ||
+		transaction.type === 'topup_credit';
+
 	return (
 		<div className="flex items-center gap-4 not-first:border-t border-t-neutral-300/50 dark:border-t-neutral-700/50 py-3">
 			<TxTypeIcon type={transaction.type} />
@@ -25,7 +31,10 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
 			</div>
 
 			<div className="flex justify-center items-center shrink-0">
-				<CreditAmount amount={transaction.amount} />
+				<CreditAmount
+					amount={transaction.amount}
+					color={isIncoming ? 'green' : 'red'}
+				/>
 			</div>
 		</div>
 	);
