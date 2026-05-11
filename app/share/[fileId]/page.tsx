@@ -37,7 +37,7 @@ export default async function ShareFile({
 	}
 
 	return (
-		<div>
+		<div className="flex flex-col gap-5">
 			<FileHeader file={file} />
 
 			<FileMetadata

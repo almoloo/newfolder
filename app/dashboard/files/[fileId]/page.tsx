@@ -6,6 +6,7 @@ import { redirect, notFound } from 'next/navigation';
 
 import FileMetadata from '@/components/files/file-metadata';
 import FileHeader from '@/components/files/file-header';
+import ChatBox from '@/components/chat/chat-box';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,10 +30,16 @@ export default async function FilePage({
 	if (!file) notFound();
 
 	return (
-		<div>
+		<div className="flex flex-col gap-5">
 			<FileHeader file={file} />
 
 			<FileMetadata file={file} />
+
+			<ChatBox
+				fileId={file.id}
+				filename={file.filename}
+				mimeType={file.mimeType}
+			/>
 		</div>
 	);
 }

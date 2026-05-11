@@ -28,7 +28,7 @@ export default function FileHeader({ file }: FileHeaderProps) {
 	const Icon = CATEGORY_ICONS[category];
 
 	return (
-		<div className="flex items-center flex-wrap gap-4 mb-5 md:mb-8">
+		<div className="flex items-center flex-wrap gap-4">
 			<div className="bg-white/15 border border-slate-400/20 text-neutral-400 aspect-square rounded p-3">
 				<Icon size={28} />
 			</div>
