@@ -65,16 +65,21 @@ CMD ["npx", "drizzle-kit", "migrate"]
 
 # ---- runner: minimal production image ----------------------------------------
 FROM node:20-alpine AS runner
-WORKDIR /app
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-# Non-root user for security
+# Create the non-root user first, then /app owned by that user.
+# The 0G SDK writes {fragmentHash}.temp files into the process CWD (/app),
+# so the nextjs user must have write permission on the directory itself.
 RUN addgroup --system --gid 1001 nodejs \
- && adduser  --system --uid 1001 nextjs
+ && adduser  --system --uid 1001 nextjs \
+ && mkdir -p /app \
+ && chown nextjs:nodejs /app
+
+WORKDIR /app
 
 # standalone output is a self-contained server — copy it plus static assets
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

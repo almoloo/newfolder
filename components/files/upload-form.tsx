@@ -127,6 +127,9 @@ export default function UploadForm() {
 										}
 									>
 										{summarizeAmount(costStars)} stars
+										{summarizeAmount(costStars) === '1'
+											? ''
+											: 's'}
 									</span>
 								</>
 							)}
