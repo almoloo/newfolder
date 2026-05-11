@@ -28,12 +28,12 @@ export default function MessageBubble({
 							<p className="mb-2 last:mb-0">{children}</p>
 						),
 						ul: ({ children }) => (
-							<ul className="list-disc pl-4 mb-2 last:mb-0 space-y-0.5">
+							<ul className="list-disc pl-4 mb-2 last:mb-0 space-y-4">
 								{children}
 							</ul>
 						),
 						ol: ({ children }) => (
-							<ol className="list-decimal pl-4 mb-2 last:mb-0 space-y-0.5">
+							<ol className="list-decimal pl-4 mb-2 last:mb-0 space-y-4">
 								{children}
 							</ol>
 						),

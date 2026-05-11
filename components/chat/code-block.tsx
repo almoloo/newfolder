@@ -22,7 +22,7 @@ export default function CodeBlock({ children }: CodeBlockProps) {
 			<button
 				onClick={handleCopy}
 				aria-label="Copy code"
-				className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+				className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
 			>
 				{copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
 			</button>
