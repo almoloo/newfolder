@@ -20,13 +20,8 @@ const CSP = `
 	.trim();
 
 const nextConfig: NextConfig = {
-	// Produce a self-contained server in .next/standalone for Docker deployments.
-	// Copy .next/standalone → image, then add .next/static and public on top.
 	output: 'standalone',
-	// Keep pdf-parse out of the Turbopack/webpack bundle so Node.js loads it
-	// natively via require(). This avoids the "@napi-rs/canvas not found" error
-	// and lets pdf-parse use its own internal require() calls.
-	serverExternalPackages: ['pdf-parse'],
+	serverExternalPackages: ['pdf-parse', 'officeparser'],
 	experimental: {
 		optimizePackageImports: ['@phosphor-icons/react'],
 	},
