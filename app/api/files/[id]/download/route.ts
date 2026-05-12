@@ -118,7 +118,7 @@ export async function GET(
 			);
 		}
 
-		const data = await fs.readFile(tempPath);
+		const data = await fs.readFile(tempPath as string);
 
 		// Sanitize filename for Content-Disposition header
 		const safeFilename = file.filename.replace(/["\\]/g, '_');
