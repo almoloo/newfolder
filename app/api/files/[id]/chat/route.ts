@@ -76,16 +76,14 @@ async function extractDocumentText(
 	const buf = await fs.readFile(filePath);
 
 	if (mime === 'application/pdf') {
-		// officeParser detects type by file extension; temp files have no extension,
-		// so we write the buffer to a path with .pdf suffix then clean up.
-		const officeParser = _require('officeparser');
-		const pdfPath = `${filePath}.pdf`;
-		await fs.writeFile(pdfPath, buf);
-		try {
-			return await officeParser.parseOffice(pdfPath);
-		} finally {
-			await fs.unlink(pdfPath).catch(() => {});
-		}
+		const { PDFParse } = _require('pdf-parse') as {
+			PDFParse: new (opts: { url: string }) => {
+				getText(): Promise<{ text: string }>;
+			};
+		};
+		const parser = new PDFParse({ url: `file://${filePath}` });
+		const result = await parser.getText();
+		return result.text;
 	}
 
 	if (
@@ -97,7 +95,6 @@ async function extractDocumentText(
 	}
 
 	if (mime === 'application/msword') {
-		// Same extension issue for .doc files
 		const officeParser = _require('officeparser');
 		const docPath = `${filePath}.doc`;
 		await fs.writeFile(docPath, buf);
