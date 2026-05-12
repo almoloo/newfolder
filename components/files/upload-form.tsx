@@ -126,7 +126,7 @@ export default function UploadForm() {
 												: 'text-red-500'
 										}
 									>
-										{summarizeAmount(costStars)} stars
+										{summarizeAmount(costStars)} star
 										{summarizeAmount(costStars) === '1'
 											? ''
 											: 's'}

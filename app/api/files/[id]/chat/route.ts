@@ -76,26 +76,21 @@ async function extractDocumentText(
 	const buf = await fs.readFile(filePath);
 
 	if (mime === 'application/pdf') {
-		// Lazy-load pdf-parse and stub missing browser globals so it doesn't
-		// crash at require-time in a Node.js server environment.
-		const g = globalThis as Record<string, unknown>;
-		if (!g['DOMMatrix']) g['DOMMatrix'] = class DOMMatrix {};
-		if (!g['ImageData']) g['ImageData'] = class ImageData {};
-		if (!g['Path2D']) g['Path2D'] = class Path2D {};
-		const pdfParse = _require('pdf-parse') as (
-			buf: Buffer,
-		) => Promise<{ text: string }>;
-		const result = await pdfParse(buf);
-		return result.text;
+		const officeParser = _require('officeparser');
+		return await officeParser.parseOffice(filePath);
 	}
 
 	if (
 		mime ===
-			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-		mime === 'application/msword'
+		'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 	) {
 		const result = await mammoth.extractRawText({ buffer: buf });
 		return result.value;
+	}
+
+	if (mime === 'application/msword') {
+		const officeParser = _require('officeparser');
+		return await officeParser.parseOffice(filePath);
 	}
 
 	// Spreadsheets (xlsx, xls, ods)
@@ -253,34 +248,103 @@ export async function POST(
 		let cached = getFileContext(session.user.id, id);
 
 		if (!cached) {
-			// Download file from 0G storage (retry up to 3 times for transient ECONNRESET)
+			// Download file from 0G storage (retry up to 3 times for transient errors)
 			const storageKey = decodeStorageHash(file.storageHash);
-			tempPath = path.join(os.tmpdir(), `zg-chat-${crypto.randomUUID()}`);
 
 			let downloadErr: unknown = null;
 			for (let attempt = 1; attempt <= 3; attempt++) {
+				// Fresh temp path each attempt so the SDK cannot reuse a stale/corrupted file
+				const attemptPath = path.join(
+					os.tmpdir(),
+					`zg-chat-${crypto.randomUUID()}`,
+				);
+				// tempPath is updated so the finally-block always cleans the last-used path
+				tempPath = attemptPath;
 				try {
 					const indexer = createIndexer();
 					const err = await indexer.download(
 						storageKey,
-						tempPath,
+						attemptPath,
 						false,
 					);
-					if (err === null) {
-						downloadErr = null;
-						break;
+					if (err !== null) {
+						downloadErr = err;
+						console.warn(
+							`[files/[id]/chat] download attempt ${attempt} returned error:`,
+							err,
+						);
+						await fs.unlink(attemptPath).catch(() => {});
+						continue;
 					}
-					downloadErr = err;
-					console.warn(
-						`[files/[id]/chat] download attempt ${attempt} returned error:`,
-						err,
-					);
+					// Verify the downloaded file is not empty or zero-filled
+					const stat = await fs.stat(attemptPath).catch(() => null);
+					if (!stat || stat.size === 0) {
+						downloadErr = new Error('Downloaded file is empty');
+						console.warn(
+							`[files/[id]/chat] download attempt ${attempt}: file is empty`,
+						);
+						await fs.unlink(attemptPath).catch(() => {});
+						continue;
+					}
+					// Check first 4 bytes are not all zeros (corrupted node response)
+					const handle = await fs.open(attemptPath, 'r');
+					const header = Buffer.alloc(4);
+					await handle.read(header, 0, 4, 0);
+					await handle.close();
+					if (header.readUInt32BE(0) === 0) {
+						downloadErr = new Error(
+							'Downloaded file has zero-filled header (corrupted)',
+						);
+						console.warn(
+							`[files/[id]/chat] download attempt ${attempt}: file header is zero-filled`,
+						);
+						await fs.unlink(attemptPath).catch(() => {});
+						continue;
+					}
+					// For ZIP-based formats (DOCX, XLSX, ODS) load the ZIP and
+					// actually decompress the first file entry to verify local
+					// file headers are intact.  JSZip.loadAsync alone only
+					// reads the central directory (at the end of the file) and
+					// succeeds even when the body is zero-filled; reading an
+					// entry forces it to seek to the local header in the body.
+					const ZIP_MIME_SET = new Set([
+						'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+						'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+						'application/vnd.oasis.opendocument.spreadsheet',
+					]);
+					if (file.mimeType && ZIP_MIME_SET.has(file.mimeType)) {
+						try {
+							const JSZip = (await import('jszip')).default;
+							const zipBuf = await fs.readFile(attemptPath);
+							const zip = await JSZip.loadAsync(zipBuf);
+							// Read the first non-directory entry to validate
+							// that local file headers in the body are intact.
+							const firstEntry = Object.values(zip.files).find(
+								(f) => !f.dir,
+							);
+							if (firstEntry) {
+								await firstEntry.async('nodebuffer');
+							}
+						} catch (zipErr) {
+							downloadErr = new Error(
+								`corrupt zip: ${(zipErr as Error).message}`,
+							);
+							console.warn(
+								`[files/[id]/chat] download attempt ${attempt}: ${(downloadErr as Error).message}`,
+							);
+							await fs.unlink(attemptPath).catch(() => {});
+							continue;
+						}
+					}
+					downloadErr = null;
+					break;
 				} catch (e) {
 					downloadErr = e;
 					console.warn(
 						`[files/[id]/chat] download attempt ${attempt} threw:`,
 						(e as Error).message ?? e,
 					);
+					await fs.unlink(attemptPath).catch(() => {});
 				}
 			}
 
@@ -332,7 +396,36 @@ export async function POST(
 						`Answer the user's questions about this file. If asked to modify it, produce the full modified content.`,
 				};
 			} else {
-				// document
+				// document — validate magic bytes before extraction to detect
+				// corrupt data returned by 0G storage nodes
+				const MAGIC: Record<string, number> = {
+					'application/pdf': 0x25504446, // %PDF
+					'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 0x504b0304, // PK\x03\x04 (ZIP)
+					'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 0x504b0304,
+					'application/vnd.oasis.opendocument.spreadsheet': 0x504b0304,
+				};
+				const expectedMagic = file.mimeType
+					? MAGIC[file.mimeType]
+					: undefined;
+				if (expectedMagic !== undefined && tempPath !== null) {
+					const fh = await fs.open(tempPath, 'r');
+					const magicBuf = Buffer.alloc(4);
+					await fh.read(magicBuf, 0, 4, 0);
+					await fh.close();
+					const actual = magicBuf.readUInt32BE(0);
+					if (actual !== expectedMagic) {
+						console.error(
+							`[files/[id]/chat] corrupt file: expected magic 0x${expectedMagic.toString(16)}, got 0x${actual.toString(16)}`,
+						);
+						return Response.json(
+							{
+								error: 'The downloaded file appears corrupted (storage node returned invalid data). Please try again — if this persists, re-upload the file.',
+							},
+							{ status: 502 },
+						);
+					}
+				}
+
 				let extractedText: string;
 				try {
 					extractedText = await extractDocumentText(
@@ -402,15 +495,42 @@ export async function POST(
 		const authHeaders =
 			await broker.inference.getRequestHeaders(providerAddress);
 
-		// Proxy streaming request to 0G compute
-		const upstream = await fetch(`${endpoint}/chat/completions`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				...authHeaders,
-			},
-			body: JSON.stringify({ model, messages, stream: true }),
-		});
+		// Proxy streaming request to 0G compute (retry up to 3 times for ECONNRESET)
+		let upstream: Response | null = null;
+		let upstreamErr: unknown = null;
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			try {
+				upstream = await fetch(`${endpoint}/chat/completions`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...authHeaders,
+					},
+					body: JSON.stringify({ model, messages, stream: true }),
+				});
+				upstreamErr = null;
+				break;
+			} catch (e) {
+				upstreamErr = e;
+				console.warn(
+					`[files/[id]/chat] upstream fetch attempt ${attempt} threw:`,
+					(e as Error).message ?? e,
+				);
+			}
+		}
+
+		if (upstreamErr !== null || upstream === null) {
+			console.error(
+				'[files/[id]/chat] upstream fetch failed after retries:',
+				upstreamErr,
+			);
+			return Response.json(
+				{
+					error: 'Compute provider is temporarily unreachable. Please try again.',
+				},
+				{ status: 502 },
+			);
+		}
 
 		if (!upstream.ok) {
 			const errText = await upstream.text();

@@ -46,10 +46,66 @@ export async function GET(
 		}
 
 		const storageKey = decodeStorageHash(file.storageHash);
-		tempPath = path.join(os.tmpdir(), `zg-dl-${crypto.randomUUID()}`);
 
-		const indexer = createIndexer();
-		const downloadErr = await indexer.download(storageKey, tempPath, false);
+		let downloadErr: unknown = null;
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			// Fresh temp path each attempt so the SDK cannot reuse a stale/corrupted file
+			const attemptPath = path.join(
+				os.tmpdir(),
+				`zg-dl-${crypto.randomUUID()}`,
+			);
+			tempPath = attemptPath;
+			try {
+				const indexer = createIndexer();
+				const err = await indexer.download(
+					storageKey,
+					attemptPath,
+					false,
+				);
+				if (err !== null) {
+					downloadErr = err;
+					console.warn(
+						`[files/[id]/download] attempt ${attempt} error:`,
+						err,
+					);
+					await fs.unlink(attemptPath).catch(() => {});
+					continue;
+				}
+				// Verify file is not empty or zero-filled (corrupted node response)
+				const stat = await fs.stat(attemptPath).catch(() => null);
+				if (!stat || stat.size === 0) {
+					downloadErr = new Error('Downloaded file is empty');
+					console.warn(
+						`[files/[id]/download] attempt ${attempt}: file is empty`,
+					);
+					await fs.unlink(attemptPath).catch(() => {});
+					continue;
+				}
+				const handle = await fs.open(attemptPath, 'r');
+				const header = Buffer.alloc(4);
+				await handle.read(header, 0, 4, 0);
+				await handle.close();
+				if (header.readUInt32BE(0) === 0) {
+					downloadErr = new Error(
+						'Downloaded file has zero-filled header (corrupted)',
+					);
+					console.warn(
+						`[files/[id]/download] attempt ${attempt}: file header is zero-filled`,
+					);
+					await fs.unlink(attemptPath).catch(() => {});
+					continue;
+				}
+				downloadErr = null;
+				break;
+			} catch (e) {
+				downloadErr = e;
+				console.warn(
+					`[files/[id]/download] attempt ${attempt} threw:`,
+					(e as Error).message ?? e,
+				);
+				await fs.unlink(attemptPath).catch(() => {});
+			}
+		}
 
 		if (downloadErr !== null) {
 			console.error(

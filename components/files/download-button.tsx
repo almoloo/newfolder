@@ -16,7 +16,15 @@ export default function DownloadButton({ fileId }: DownloadButtonProps) {
 		setLoading(true);
 		try {
 			const res = await fetch(`/api/files/${fileId}/download`);
-			if (!res.ok) throw new Error('Download failed');
+			if (!res.ok) {
+				let message = `Download failed (${res.status})`;
+				try {
+					const json = await res.json();
+					if (json?.error) message = json.error;
+				} catch {}
+				toast.error(message);
+				return;
+			}
 			const blob = await res.blob();
 			const disposition = res.headers.get('Content-Disposition') ?? '';
 			const match = disposition.match(/filename="([^"]+)"/);
