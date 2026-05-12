@@ -21,7 +21,18 @@ const CSP = `
 
 const nextConfig: NextConfig = {
 	output: 'standalone',
+	// Keep these packages out of the Turbopack/webpack bundle so Node.js loads
+	// them natively. Required for native bindings and dynamic imports to work.
 	serverExternalPackages: ['pdf-parse', 'officeparser'],
+	// pdf-parse dynamically imports pdf.worker.mjs at runtime. Next.js file
+	// tracing won't pick it up automatically, so we force-include the entire
+	// dist folder so it lands in .next/standalone/node_modules.
+	outputFileTracingIncludes: {
+		'/api/**': [
+			'./node_modules/pdf-parse/dist/**',
+			'./node_modules/officeparser/dist/**',
+		],
+	},
 	experimental: {
 		optimizePackageImports: ['@phosphor-icons/react'],
 	},
