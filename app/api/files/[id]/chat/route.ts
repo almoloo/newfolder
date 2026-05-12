@@ -362,8 +362,9 @@ export async function POST(
 			}
 
 			// Process by category and populate cache
+			const resolvedPath = tempPath as string;
 			if (category === 'image') {
-				const imgBuffer = await fs.readFile(tempPath);
+				const imgBuffer = await fs.readFile(resolvedPath);
 				const base64 = imgBuffer.toString('base64');
 				const dataUrl = `data:${file.mimeType};base64,${base64}`;
 				const imageSystemContent =
@@ -378,7 +379,7 @@ export async function POST(
 					imageSystemContent,
 				};
 			} else if (category === 'text') {
-				const raw = await fs.readFile(tempPath);
+				const raw = await fs.readFile(resolvedPath);
 				const text = raw
 					.subarray(0, MAX_INLINE_BYTES)
 					.toString('utf-8');
@@ -407,8 +408,8 @@ export async function POST(
 				const expectedMagic = file.mimeType
 					? MAGIC[file.mimeType]
 					: undefined;
-				if (expectedMagic !== undefined && tempPath !== null) {
-					const fh = await fs.open(tempPath, 'r');
+				if (expectedMagic !== undefined) {
+					const fh = await fs.open(resolvedPath, 'r');
 					const magicBuf = Buffer.alloc(4);
 					await fh.read(magicBuf, 0, 4, 0);
 					await fh.close();
@@ -429,7 +430,7 @@ export async function POST(
 				let extractedText: string;
 				try {
 					extractedText = await extractDocumentText(
-						tempPath,
+						resolvedPath,
 						file.mimeType!,
 					);
 				} catch (err) {
