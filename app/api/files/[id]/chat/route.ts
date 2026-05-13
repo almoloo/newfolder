@@ -134,14 +134,12 @@ async function extractDocumentText(
 	}
 
 	if (mime === 'application/msword') {
-		const officeParser = _require('officeparser');
-		const docPath = `${filePath}.doc`;
-		await fs.writeFile(docPath, buf);
-		try {
-			return await officeParser.parseOffice(docPath);
-		} finally {
-			await fs.unlink(docPath).catch(() => {});
-		}
+		const WordExtractor = _require('word-extractor') as {
+			new (): { extract(path: string): Promise<{ getBody(): string }> };
+		};
+		const extractor = new WordExtractor();
+		const doc = await extractor.extract(filePath);
+		return doc.getBody();
 	}
 
 	// Spreadsheets (xlsx, xls, ods)
