@@ -21,6 +21,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 import { useToast } from '@/components/layout/toast';
 import { requiredChain } from '@/lib/web3/config';
+import WalletPopup from '@/components/wallet/wallet-popup';
+import { SignOutIcon } from '@phosphor-icons/react';
 
 function formatAddress(address: string) {
 	return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -194,7 +196,7 @@ export default function WalletAuthButton() {
 		} else if (!isAuthenticated && pathname !== '/') {
 			router.push('/');
 		}
-	}, [isAuthenticated, session.isPending, pathname]);
+	}, [isAuthenticated, session.isPending, pathname, router]);
 
 	function getPrimaryLabel(isConnectedToWallet: boolean) {
 		if (!isConnectedToWallet) {
@@ -242,7 +244,7 @@ export default function WalletAuthButton() {
 
 				return (
 					<div
-						className="flex flex-col items-end gap-2"
+						className="flex flex-col items-end gap-2 relative"
 						aria-hidden={!ready}
 						style={
 							!ready
@@ -273,22 +275,37 @@ export default function WalletAuthButton() {
 									}}
 									className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-black/5 dark:border-white/10 dark:text-zinc-100 dark:hover:bg-white/10"
 								>
-									Sign out
+									<span className="hidden md:block">
+										Sign out
+									</span>
+									<SignOutIcon
+										size={20}
+										weight="bold"
+										className="md:hidden"
+									/>
 								</button>
 							) : null}
 						</div>
 						{connected && !isAuthenticated ? (
-							<p className="max-w-xs text-right text-xs text-zinc-500 dark:text-zinc-400">
-								Approve the wallet prompts to switch to{' '}
-								{requiredChain.name}
-								and sign in.
-							</p>
+							// <p className="max-w-xs text-right text-xs text-zinc-500 dark:text-zinc-400">
+							// 	Approve the wallet prompts to switch to{' '}
+							// 	{requiredChain.name}
+							// 	and sign in.
+							// </p>
+							<WalletPopup
+								type="error"
+								message={`Approve the wallet prompts to switch to ${requiredChain.name} and sign in.`}
+							/>
 						) : null}
 						{connected && !isAuthenticated && !isOnRequiredChain ? (
-							<p className="max-w-xs text-right text-xs text-amber-600 dark:text-amber-400">
-								The app will try to add {requiredChain.name}{' '}
-								automatically if it is missing.
-							</p>
+							// <p className="max-w-xs text-right text-xs text-amber-600 dark:text-amber-400">
+							// 	The app will try to add {requiredChain.name}{' '}
+							// 	automatically if it is missing.
+							// </p>
+							<WalletPopup
+								type="error"
+								message={`The app will try to add ${requiredChain.name} automatically if it is missing.`}
+							/>
 						) : null}
 					</div>
 				);
