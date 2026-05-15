@@ -69,7 +69,20 @@ export async function POST(request: Request) {
 		const filename = sanitizeFilename(fileField.name || 'file');
 		const mimeType = fileField.type || 'application/octet-stream';
 		const sizeBytes = String(fileField.size);
-		const quotedFee = String(BigInt(sizeBytes) * UPLOAD_FEE_PER_BYTE);
+
+		// Calculate fee with same rounding logic as frontend:
+		// Round up to nearest whole star, minimum 1 star (if fee is enabled)
+		const NEURON_PER_STAR = 10n ** 12n;
+		let quotedFee: string;
+		if (UPLOAD_FEE_PER_BYTE > 0n) {
+			const rawNeuron = BigInt(sizeBytes) * UPLOAD_FEE_PER_BYTE;
+			const stars = (rawNeuron + NEURON_PER_STAR - 1n) / NEURON_PER_STAR;
+			quotedFee = String(
+				BigInt(Math.max(1, Number(stars))) * NEURON_PER_STAR,
+			);
+		} else {
+			quotedFee = '0';
+		}
 
 		// Check user has sufficient credit balance
 		if (UPLOAD_FEE_PER_BYTE > 0n) {
