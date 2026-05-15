@@ -22,7 +22,7 @@ import { authClient } from '@/lib/auth/client';
 import { useToast } from '@/components/layout/toast';
 import { requiredChain } from '@/lib/web3/config';
 import WalletPopup from '@/components/wallet/wallet-popup';
-import { SignOutIcon } from '@phosphor-icons/react';
+import { SignOutIcon, UserIcon } from '@phosphor-icons/react';
 
 function formatAddress(address: string) {
 	return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -211,7 +211,21 @@ export default function WalletAuthButton() {
 			return 'Retry sign-in';
 		}
 
-		return address ? formatAddress(address) : 'Wallet';
+		// return address ? formatAddress(address) : 'Wallet';
+		return address ? (
+			<div>
+				<UserIcon
+					size={16}
+					weight="bold"
+					className="inline-block sm:hidden mr-1"
+				/>
+				<span className="hidden sm:inline">
+					{formatAddress(address)}
+				</span>
+			</div>
+		) : (
+			'Wallet'
+		);
 	}
 
 	async function handleSignOut() {
