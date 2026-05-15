@@ -16,12 +16,16 @@ import { useDropzone } from 'react-dropzone';
 const MAX_FILE_BYTES = 100 * 1024 * 1024; // 100 MB
 const FEE_PER_BYTE = BigInt(process.env.NEXT_PUBLIC_UPLOAD_FEE_PER_BYTE ?? '0');
 const NEURON_PER_STAR = BigInt('1000000000000');
+const MINIMUM_FEE_STARS = 2500n; // Minimum 2,500 stars to cover gas costs
 
 function fileCost(sizeBytes: number): bigint {
+	if (FEE_PER_BYTE === 0n) return 0n;
 	const neuron = FEE_PER_BYTE * BigInt(sizeBytes);
-	// Round up to the nearest whole star, minimum 1 star
+	// Round up to the nearest whole star
 	const stars = (neuron + NEURON_PER_STAR - 1n) / NEURON_PER_STAR;
-	return BigInt(Math.max(1, Number(stars))) * NEURON_PER_STAR;
+	// Apply minimum fee of 2,500 stars to cover gas costs
+	const finalStars = stars > MINIMUM_FEE_STARS ? stars : MINIMUM_FEE_STARS;
+	return finalStars * NEURON_PER_STAR;
 }
 
 function formatBytes(bytes: number): string {

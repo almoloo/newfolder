@@ -71,15 +71,17 @@ export async function POST(request: Request) {
 		const sizeBytes = String(fileField.size);
 
 		// Calculate fee with same rounding logic as frontend:
-		// Round up to nearest whole star, minimum 1 star (if fee is enabled)
+		// Round up to nearest whole star, minimum 2,500 stars to cover gas costs
 		const NEURON_PER_STAR = 10n ** 12n;
+		const MINIMUM_FEE_STARS = 2500n;
 		let quotedFee: string;
 		if (UPLOAD_FEE_PER_BYTE > 0n) {
 			const rawNeuron = BigInt(sizeBytes) * UPLOAD_FEE_PER_BYTE;
 			const stars = (rawNeuron + NEURON_PER_STAR - 1n) / NEURON_PER_STAR;
-			quotedFee = String(
-				BigInt(Math.max(1, Number(stars))) * NEURON_PER_STAR,
-			);
+			// Apply minimum fee of 2,500 stars to cover gas costs
+			const finalStars =
+				stars > MINIMUM_FEE_STARS ? stars : MINIMUM_FEE_STARS;
+			quotedFee = String(finalStars * NEURON_PER_STAR);
 		} else {
 			quotedFee = '0';
 		}
