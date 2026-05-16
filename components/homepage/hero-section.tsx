@@ -4,9 +4,9 @@ import { ChatTextIcon } from '@phosphor-icons/react';
 
 export default function HeroSection() {
 	return (
-		<section className="centered-container flex flex-col-reverse lg:flex-row justify-between items-center text-center lg:text-start gap-10 lg:gap-20 py-0 mt-24 mb-30">
+		<section className="centered-container flex flex-col-reverse lg:flex-row justify-between items-center text-center lg:text-start gap-10 lg:gap-20 py-0 mt-16 mb-20 lg:mt-24 lg:mb-30">
 			<div>
-				<h2 className="flex flex-col gap-2 text-3xl font-black dark:text-slate-200 mb-5">
+				<h2 className="flex flex-col gap-2 text-2xl lg:text-3xl font-black dark:text-slate-200 mb-5">
 					<span>Chat with Your Documents</span>
 					<span className="">Decentralized. Intelligent.</span>
 				</h2>

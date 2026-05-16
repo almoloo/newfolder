@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function NetworkSection() {
 	return (
-		<section className="bg-zinc-700 text-slate-50 dark:bg-zinc-900 px-20 py-20 rounded-4xl">
+		<section className="bg-zinc-700 text-slate-50 dark:bg-zinc-900 p-5 lg:p-20 rounded-4xl">
 			<div className="flex flex-col justify-center text-center">
 				<Link
 					href="https://0g.ai"
